@@ -1,4 +1,5 @@
 ## Automatic flexible date extracting from strings in any formats.
+___
 
 **Datify** makes it easy to extract dates from strings in _(nearly)_ any formats.
 
@@ -8,7 +9,7 @@ The date formats supported by Datify are the following:
 
 * Day first digit-only dates: 20.02.2020, 09/07/2000, 9-1-2005;
 * Month first digit-only dates: 02 22 2020, 09.07.2000, 1.9/2005;
-* Digit and dates in the general date format: 2020-04-15;
+* Dates in the general date format: 2020-04-15;
 * **Alphanumeric dates in different languages**: 11th of July 2020; 6 липня 2021; 31 декабря, 2021.
 
 See the [Formats](#Formats) section for the detailed information about the supported formats.
