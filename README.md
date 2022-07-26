@@ -1,5 +1,4 @@
 ## Automatic flexible date extracting from strings in any formats.
-___
 
 **Datify** makes it easy to extract dates from strings in _(nearly)_ any formats.
 
@@ -21,6 +20,8 @@ The behavior of Datify can be configured with the DatifyConfig - see [Configurat
 - [x] English
 - [x] Ukrainian
 - [x] Russian
+
+[Documentation link](https://pub.dev/documentation/datify/latest/)
 
 ## Example
 
