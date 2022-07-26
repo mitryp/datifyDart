@@ -174,7 +174,7 @@ When the `dayFirst` is set to `true`:
 
 - The most common digit-only date format: `DD$MM$YYYY` - e.g. _20.01.2022_;
 
-When the `dayLast` is set to `false`:
+When the `dayFirst` is set to `false`:
 
 - American digit date format (the month is first): `MM$DD$YYYY` - e.g. _12.31.2021_;
 
