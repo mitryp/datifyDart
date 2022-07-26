@@ -205,6 +205,19 @@ void main() {
           reason: 'Datify{dayFirst: false}.parse(${entry.key}) was $d',
         );
       }
+
+      const alphanumericDates = {
+        'May, 20, 2021': [2021, 5, 20],
+        '10 April 2020': [2020, 4, 10],
+        '12 2020 march': [2020, 3, 12],
+      };
+
+      for (var entry in alphanumericDates.entries) {
+        final d = Datify.parse(entry.key);
+
+        expect([d.year, d.month, d.day], entry.value);
+      }
+
       DatifyConfig.dayFirst = true;
     });
   });

@@ -4,10 +4,7 @@ import 'dart:math';
 /// Splits the given string with the first found separator from the DatifyConfig.
 /// If the string does not contain any known separators, returns null.
 ///
-List<String>? _splitWord(String str) {
-  final res = str.split(DatifyConfig.splitterPattern);
-  return (res.length == 1 ? null : res);
-}
+List<String> _splitWord(String str) => str.split(DatifyConfig.splitterPattern);
 
 /// The function that is used to make a deduction if the two given string are different forms of
 /// the same word or not.
@@ -152,10 +149,13 @@ class Datify {
   /// The class supports the following formats:
   /// * digit only dates in the EU format (DD$MM$YYYY): 20.02.2020, 09 07 2000, 9-1-2005;
   /// * digit only dates in the US format (MM.DD.YYYY): 02/22/2020, 09.07.2000, 1 9 2005;
-  /// * digit and alphanumeric dates in the general date format (YYYYMMDD or YYYY$MM$DD) with or without separators;
+  /// * digit and alphanumeric dates in the general date format (YYYY$?MM$?DD) with or without separators;
   /// * alphanumeric dates in different languages: 11th$of$July,$2020; 6$липня$2021, 31$декабря$2021.
-  /// Whenever the sign $ is encountered, that means that in its place may be any of the supported
-  /// separator characters. The support of the separators can be extended according to the production
+  /// Whenever the sign `$` is encountered, that means that in its place may be any of the supported
+  /// separator characters. If the sign is followed by the question mark `$?`, that means that the
+  /// separator is optional (may or may not be present).
+  ///
+  /// The support of the separators can be extended according to the production
   /// needs with the [DatifyConfig] class. See its documentation for more information.
   ///
   /// More month locales may be added in the future.
@@ -202,7 +202,7 @@ class Datify {
     if (string == null) return;
 
     // lowercase the string
-    var input = string.toLowerCase();
+    final input = string.toLowerCase();
 
     // check if the string has a general date pattern
     // if it has, parse it and return the Datify object
@@ -228,33 +228,48 @@ class Datify {
     // split the string with the first found separator
     var dateParts = _splitWord(input);
 
-    // if the string does not contain any separators, return empty Datify object
-    if (dateParts == null) {
-      return;
+    // if the DatifyConfig.dayFirst is set to false, then
+    // check all date parts for an alphabetic month to prevent loosing the month if the
+    // day is defined before the alphabetic month
+    // sadly, it makes the parsing MUCH slower
+    if (!DatifyConfig.dayFirst) {
+      for (final datePart in dateParts) {
+        final month = _tryParseMonth(datePart);
+        if (month == null) {
+          continue;
+        }
+
+        this.month ??= month;
+        break;
+      }
     }
 
     // define the part order based on the DatifyConfig.dayFirst option and optional predefined values
-    final remainingParts = _DatePart.order(DatifyConfig.dayFirst,
+    final remainingPartsOrder = _DatePart.order(DatifyConfig.dayFirst,
         dayDefined: day != null, monthDefined: month != null, yearDefined: year != null);
 
     // parse each date part
     for (var datePart in dateParts) {
       // in each date part test all the unknown values
-      for (var part in remainingParts) {
+      for (var part in remainingPartsOrder) {
         final regexp = part.pattern;
         final match = regexp.stringMatch(datePart);
         if (match == null) {
+          // if the month was already defined, just skip the part
+          if (month != null) {
+            continue;
+          }
+
           // if the match is null, maybe its an alphabetic month?
           final parsedMonth = _tryParseMonth(datePart);
           if (parsedMonth != null) {
             month ??= parsedMonth;
-            remainingParts.remove(_DatePart.month);
+            remainingPartsOrder.remove(_DatePart.month);
             break;
           }
 
           // if no part has a match in the current
-          // date part, skip that part
-          // lost.add(datePart);
+          // date part, skip that DatePart
           continue;
         }
 
@@ -275,7 +290,7 @@ class Datify {
         }
 
         // proceed to the next part
-        remainingParts.remove(part);
+        remainingPartsOrder.remove(part);
         break;
       }
     }
@@ -489,18 +504,77 @@ abstract class DatifyConfig {
   /// and [addNewMonthsLocale] methods.*
   ///
   static final months = [
-    {'january', 'jan', 'январь', 'січень'},
-    {'february', 'feb', 'февраль', 'лютий'},
-    {'march', 'mar', 'март', 'березень'},
-    {'april', 'apr', 'апрель', 'квітень'},
-    {'may', 'май', 'травень'},
-    {'june', 'jun', 'июнь', 'червень'},
-    {'july', 'jul', 'июль', 'липень'},
-    {'august', 'aug', 'август', 'серпень'},
-    {'september', 'sep', 'сентябрь', 'вересень'},
-    {'october', 'oct', 'октябрь', 'жовтень'},
-    {'november', 'nov', 'ноябрь', 'листопад'},
-    {'december', 'dec', 'декабрь', 'грудень'}
+    {
+      'january',
+      'jan',
+      'січень',
+      'январь',
+    },
+    {
+      'february',
+      'feb',
+      'лютий',
+      'февраль',
+    },
+    {
+      'march',
+      'mar',
+      'березень',
+      'март',
+    },
+    {
+      'april',
+      'apr',
+      'квітень',
+      'апрель',
+    },
+    {
+      'may',
+      'травень',
+      'май',
+    },
+    {
+      'june',
+      'jun',
+      'червень',
+      'июнь',
+    },
+    {
+      'july',
+      'jul',
+      'липень',
+      'июль',
+    },
+    {
+      'august',
+      'aug',
+      'серпень',
+      'август',
+    },
+    {
+      'september',
+      'sep',
+      'вересень',
+      'сентябрь',
+    },
+    {
+      'october',
+      'oct',
+      'жовтень',
+      'октябрь',
+    },
+    {
+      'november',
+      'nov',
+      'листопад',
+      'ноябрь',
+    },
+    {
+      'december',
+      'dec',
+      'грудень',
+      'декабрь',
+    }
   ];
 
   /// Adds the given month name to the set of the month with the given ordinal number.
