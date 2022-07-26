@@ -5,12 +5,8 @@ import 'dart:math';
 /// If the string does not contain any known separators, returns null.
 ///
 List<String>? _splitWord(String str) {
-  for (var splitter in DatifyConfig.splitters) {
-    if (str.contains(splitter)) {
-      return str.split(splitter);
-    }
-  }
-  return null;
+  final res = str.split(DatifyConfig.splitterPattern);
+  return (res.length == 1 ? null : res);
 }
 
 /// The function that is used to make a deduction if the two given string are different forms of
@@ -154,14 +150,17 @@ class Datify {
   /// Some values may not be present in the resulting object, as the input may not contain all the date parts.
   ///
   /// The class supports the following formats:
-  /// digit only dates in the EU format (DD.MM.YYYY): 20.02.2020, 09.07.2000, 9.1.2005;
-  /// digit only dates in the US format (MM.DD.YYYY): 02.22.2020, 09.07.2000, 1.9.2005;
-  /// digit and alphanumeric dates in the general date format (YYYYMMDD or YYYY-MM-DD) with or without any supported separators;
-  /// alphanumeric dates in different languages: 11th of July, 2020; 6 липня 2021, 31 декабря 2021.
+  /// * digit only dates in the EU format (DD$MM$YYYY): 20.02.2020, 09 07 2000, 9-1-2005;
+  /// * digit only dates in the US format (MM.DD.YYYY): 02/22/2020, 09.07.2000, 1 9 2005;
+  /// * digit and alphanumeric dates in the general date format (YYYYMMDD or YYYY$MM$DD) with or without separators;
+  /// * alphanumeric dates in different languages: 11th$of$July,$2020; 6$липня$2021, 31$декабря$2021.
+  /// Whenever the sign $ is encountered, that means that in its place may be any of the supported
+  /// separator characters. The support of the separators can be extended according to the production
+  /// needs with the [DatifyConfig] class. See its documentation for more information.
   ///
-  /// More locales may be added in the future.
-  /// Moreover, you can add any month name localizations that you need right now by yourself using
-  /// the [DatifyConfig] class (see its documentation for detailed information)).
+  /// More month locales may be added in the future.
+  /// Moreover, you can add missing month name localizations by yourself using the [DatifyConfig]
+  /// class. See its documentation for detailed information.
   ///
   /// *Note: the input '7 2022' will be parsed as Datify{year=2022, month=null, day=7} with the*
   /// *[DatifyConfig.dayFirst] option set to true and Datify{year=2022, month=7, day=null} otherwise*
@@ -198,7 +197,7 @@ class Datify {
   /// *If you want help me adding new languages feel free to
   /// [create a pull requests](https://github.com/mitryp/datifyDart)*
   ///
-  Datify.parse(String? string, {bool multiline = false, this.year, this.month, this.day}) {
+  Datify.parse(String? string, {this.year, this.month, this.day}) {
     // if no input is provided does not move further
     if (string == null) return;
 
@@ -207,7 +206,7 @@ class Datify {
 
     // check if the string has a general date pattern
     // if it has, parse it and return the Datify object
-    final dateRegex = RegExp(DatifyConfig.dateFormat, multiLine: multiline);
+    final dateRegex = RegExp(DatifyConfig.dateFormat);
     final dateMatch = dateRegex.stringMatch(input);
     if (dateMatch != null) {
       // remove all the splitters from the date pattern

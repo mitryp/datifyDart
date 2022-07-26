@@ -32,6 +32,12 @@ void main() {
         expect(d.year, int.parse(s.substring(6)));
       }
     });
+
+    test('multiline dates are defined correctly', () {
+      expect(Datify.parse('''31.
+        12
+        .2003''').complete, true);
+    });
   });
 
   // Test the Datify parsing alphabetic months in different formats correctly
@@ -107,9 +113,9 @@ void main() {
         for (var month = 0; month < monthsList.length; month++) {
           final separator = _randomElementOf(DatifyConfig.splitters);
           final dateString = [
-            random.nextIntInRange(1, 31),
+            random.nextIntInRange(1, 32),
             monthsList[month],
-            random.nextIntInRange(1, 12)
+            random.nextIntInRange(1, 13)
           ].join(separator);
 
           expect(Datify.parse(dateString).month, month + 1,
@@ -264,29 +270,34 @@ void main() {
   });
 }
 
+String _randomSplitter() => _randomElementOf(DatifyConfig.splitters);
+
 Map<String, Datify> _randomDate({bool isAlphanumeric = false}) {
   final random = Random();
 
-  // define a random date part splitter
-  final splitter = _randomElementOf(DatifyConfig.splitters);
-
   // define a random date parts
-  final day = random.nextIntInRange(1, 31);
-  final month = isAlphanumeric ? randomAlphanumericMonth() : {random.nextIntInRange(1, 12): ''};
-  final year = random.nextIntInRange(1900, 2022);
+  final day = random.nextIntInRange(1, 32);
+  final month = isAlphanumeric ? randomAlphanumericMonth() : {random.nextIntInRange(1, 13): ''};
+  final year = random.nextIntInRange(1900, 2023);
 
-  // create a date string from the previously generated data
+  // create a date string from the previously generated data joined with the random date part splitter
+  // final dateString =
+  //     [day, (isAlphanumeric ? month.values.first : month.keys.first), year].join(_randomSplitter());
+
+  // changed the way of date string generation to include random splitters in each string instead of
+  // using only one few times
   final dateString =
-      [day, (isAlphanumeric ? month.values.first : month.keys.first), year].join(splitter);
+      '$day${_randomSplitter()}${isAlphanumeric ? month.values.first : month.keys.first}'
+      '${_randomSplitter()}$year';
 
   return {dateString: Datify.fromValues(day: day, month: month.keys.first, year: year)};
 }
 
 Map<int, String> randomAlphanumericMonth() {
-  final monthNum = Random().nextIntInRange(1, 12);
-  final monthNamesSet = DatifyConfig.months[monthNum];
+  final monthNum = Random().nextIntInRange(1, 13);
+  final monthNamesSet = DatifyConfig.months[monthNum - 1];
 
-  return {monthNum + 1: _randomElementOf(monthNamesSet)};
+  return {monthNum: _randomElementOf(monthNamesSet)};
 }
 
 T _randomElementOf<T>(Iterable<T> collection) {
@@ -295,6 +306,8 @@ T _randomElementOf<T>(Iterable<T> collection) {
 }
 
 extension _RadomRangeInt on Random {
+  /// Returns a random number in the range between min (inclusive) and max (exclusive).
+  ///
   int nextIntInRange(int min, int max) {
     return min + nextInt(max - min);
   }

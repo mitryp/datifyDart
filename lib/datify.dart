@@ -1,8 +1,5 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
-library datify;
 
-export 'src/datify_base.dart' show Datify, DatifyConfig;
+export 'src/datify_base.dart' show Datify, DatifyConfig, DatifyResult;
 
-// TODO: Docs!
+// TODO: Docs! and run `dart doc`
+// TODO: Readme
