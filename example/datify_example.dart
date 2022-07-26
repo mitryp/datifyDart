@@ -17,7 +17,8 @@ String handleRequest(SearchRequest searchRequest) {
 
   // make the search request
   final response =
-      Events.query(year: res.year, month: res.month, day: res.day) ?? 'No events found for this query 👀';
+      Events.query(year: res.year, month: res.month, day: res.day) ??
+          'No events found for this query 👀';
 
   return response;
 }
@@ -71,7 +72,9 @@ abstract class Events {
 
     // find the first event corresponding to the given date
     final res = _records.entries
-        .firstWhere((record) => record.key.satisfies(year: year, month: month, day: day),
+        .firstWhere(
+            (record) =>
+                record.key.satisfies(year: year, month: month, day: day),
             orElse: () => MapEntry(Date.empty(), ''))
         .value;
     return (res.isEmpty ? null : res);

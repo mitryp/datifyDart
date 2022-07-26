@@ -39,7 +39,9 @@ int? _tryParseMonth(String input) {
     }
   }
 
-  for (var monthIndex = 0; monthIndex < DatifyConfig.months.length; monthIndex++) {
+  for (var monthIndex = 0;
+      monthIndex < DatifyConfig.months.length;
+      monthIndex++) {
     final currentMonthNames = DatifyConfig.months[monthIndex];
     for (var name in currentMonthNames) {
       if (input == name || _isSameWord(input, name)) {
@@ -71,11 +73,21 @@ enum _DatePart {
   /// multiple of the predefined values.
   ///
   static List<_DatePart> order(bool dayFirst,
-      {bool yearDefined = false, bool monthDefined = false, bool dayDefined = false}) {
+      {bool yearDefined = false,
+      bool monthDefined = false,
+      bool dayDefined = false}) {
     if (dayFirst) {
-      return [if (!dayDefined) day, if (!monthDefined) month, if (!yearDefined) year];
+      return [
+        if (!dayDefined) day,
+        if (!monthDefined) month,
+        if (!yearDefined) year
+      ];
     }
-    return [if (!monthDefined) month, if (!dayDefined) day, if (!yearDefined) year];
+    return [
+      if (!monthDefined) month,
+      if (!dayDefined) day,
+      if (!yearDefined) year
+    ];
   }
 
   /// Returns the respective [RegExp] pattern for the given [_DatePart].
@@ -195,7 +207,7 @@ class Datify {
   /// See the [DatifyResult] documentation for the detailed information about it.
   ///
   /// *If you want help me adding new languages feel free to
-  /// [create a pull requests](https://github.com/mitryp/datifyDart)*
+  /// [create a pull request](https://github.com/mitryp/datifyDart)*
   ///
   Datify.parse(String? string, {this.year, this.month, this.day}) {
     // if no input is provided does not move further
@@ -210,7 +222,8 @@ class Datify {
     final dateMatch = dateRegex.stringMatch(input);
     if (dateMatch != null) {
       // remove all the splitters from the date pattern
-      final cleanDateMatch = dateMatch.replaceAll(DatifyConfig.splitterPattern, '');
+      final cleanDateMatch =
+          dateMatch.replaceAll(DatifyConfig.splitterPattern, '');
 
       // parse the date
       final year = int.parse(cleanDateMatch.substring(0, 4));
@@ -246,7 +259,9 @@ class Datify {
 
     // define the part order based on the DatifyConfig.dayFirst option and optional predefined values
     final remainingPartsOrder = _DatePart.order(DatifyConfig.dayFirst,
-        dayDefined: day != null, monthDefined: month != null, yearDefined: year != null);
+        dayDefined: day != null,
+        monthDefined: month != null,
+        yearDefined: year != null);
 
     // parse each date part
     for (var datePart in dateParts) {
@@ -369,7 +384,8 @@ class DatifyResult {
 
   /// Creates a new DatifyResult with the specified values.
   ///
-  const DatifyResult({required this.year, required this.month, required this.day});
+  const DatifyResult(
+      {required this.year, required this.month, required this.day});
 
   /// Returns a Map of the values of the DatifyResult.
   ///
@@ -481,11 +497,13 @@ abstract class DatifyConfig {
 
   /// The general date pattern with a placeholder on the place where the splitter pattern should be.
   ///
-  static const _dateFormat = r'\b[12]\d\d\d##((0[1-9])|(1[012]))##(([012]\d)|(3[01]))\b';
+  static const _dateFormat =
+      r'\b[12]\d\d\d##((0[1-9])|(1[012]))##(([012]\d)|(3[01]))\b';
 
   /// The pattern that describes any of the supported date splitters.
   ///
-  static RegExp get splitterPattern => RegExp('(${splitters.map(RegExp.escape).join("|")})');
+  static RegExp get splitterPattern =>
+      RegExp('(${splitters.map(RegExp.escape).join("|")})');
 
   /// The pattern of the general date format.
   /// Is used to find patterns of format YYYYMMDD. There could be any of the supported date splitters
@@ -639,7 +657,8 @@ abstract class DatifyConfig {
 
     // check the collection elements to be unique
     if (Set.of(monthNames).length != monthNames.length) {
-      throw ArgumentError.value(monthNames, 'monthNames', 'Month names should be unique');
+      throw ArgumentError.value(
+          monthNames, 'monthNames', 'Month names should be unique');
     }
 
     // normalize the month name
@@ -647,7 +666,8 @@ abstract class DatifyConfig {
 
     // add the months to the configuration in the storage order
     for (var ordinal = 0; ordinal < normalizedMonths.length; ordinal++) {
-      DatifyConfig.addNewMonthName(ordinal + 1, normalizedMonths.elementAt(ordinal));
+      DatifyConfig.addNewMonthName(
+          ordinal + 1, normalizedMonths.elementAt(ordinal));
     }
   }
 }

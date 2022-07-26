@@ -119,7 +119,8 @@ void main() {
           ].join(separator);
 
           expect(Datify.parse(dateString).month, month + 1,
-              reason: '${monthsList[month]} should be parsed as a ${month + 1} month number');
+              reason:
+                  '${monthsList[month]} should be parsed as a ${month + 1} month number');
         }
       });
     }
@@ -193,7 +194,8 @@ void main() {
     test('dayFirst setting works correctly', () {
       DatifyConfig.dayFirst = false;
 
-      final dates = List.generate(100, (_) => _randomDate()).map((m) => m.entries.first);
+      final dates =
+          List.generate(100, (_) => _randomDate()).map((m) => m.entries.first);
 
       for (var entry in dates) {
         final d = Datify.parse(entry.key);
@@ -231,15 +233,18 @@ void main() {
         final expected = data.values.first;
 
         final d = Datify.parse(dateString);
-        expect(d, expected, reason: 'Date of $dateString should be equal to $expected');
+        expect(d, expected,
+            reason: 'Date of $dateString should be equal to $expected');
 
         final actualDateTime = d.date;
-        final expectedDateTime = DateTime(expected.year!, expected.month!, expected.day!);
+        final expectedDateTime =
+            DateTime(expected.year!, expected.month!, expected.day!);
         expect(actualDateTime, expectedDateTime,
             reason: 'DateTime of $d should be equal to $expectedDateTime');
 
         expect(d.result.date, expectedDateTime,
-            reason: 'Result ${d.result}.date should be equal to $expectedDateTime');
+            reason:
+                'Result ${d.result}.date should be equal to $expectedDateTime');
       }
     });
   });
@@ -261,11 +266,14 @@ void main() {
         'Décembre',
       ];
 
-      expect(() => DatifyConfig.addNewMonthsLocale(['1', '2', '3']), throwsArgumentError,
+      expect(() => DatifyConfig.addNewMonthsLocale(['1', '2', '3']),
+          throwsArgumentError,
           reason: 'Wrong month names length should throw an ArgumentError');
 
-      expect(() => DatifyConfig.addNewMonthsLocale(frenchMonths), returnsNormally,
-          reason: 'Adding months with correct length should execute successfully');
+      expect(
+          () => DatifyConfig.addNewMonthsLocale(frenchMonths), returnsNormally,
+          reason:
+              'Adding months with correct length should execute successfully');
     });
 
     test('added months are defined correctly', () {
@@ -290,7 +298,9 @@ Map<String, Datify> _randomDate({bool isAlphanumeric = false}) {
 
   // define a random date parts
   final day = random.nextIntInRange(1, 32);
-  final month = isAlphanumeric ? randomAlphanumericMonth() : {random.nextIntInRange(1, 13): ''};
+  final month = isAlphanumeric
+      ? randomAlphanumericMonth()
+      : {random.nextIntInRange(1, 13): ''};
   final year = random.nextIntInRange(1900, 2023);
 
   // create a date string from the previously generated data joined with the random date part splitter
@@ -303,7 +313,9 @@ Map<String, Datify> _randomDate({bool isAlphanumeric = false}) {
       '$day${_randomSplitter()}${isAlphanumeric ? month.values.first : month.keys.first}'
       '${_randomSplitter()}$year';
 
-  return {dateString: Datify.fromValues(day: day, month: month.keys.first, year: year)};
+  return {
+    dateString: Datify.fromValues(day: day, month: month.keys.first, year: year)
+  };
 }
 
 Map<int, String> randomAlphanumericMonth() {
