@@ -12,3 +12,7 @@
 ## 1.0.2
 
 - Added the documentation link in README
+
+## 1.0.3
+
+- Extended the example in the README
