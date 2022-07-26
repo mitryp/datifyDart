@@ -65,6 +65,44 @@ void main() {
     print('$date: ${handleRequest({'date': date})}');
   }
 }
+
+/// Database emulation for the example.
+///
+/// This class stored dates and the corresponding event descriptions and provides the method for
+/// record requesting from the storage.
+///
+abstract class Events {
+  /// Stores the dates and the corresponding event descriptions.
+  ///
+  static const _records = {
+    Date(year: 2021, month: 12, day: 31): 'New Year party 🎄',
+    Date(year: 2022, month: 1, day: 20): 'Birthday celebration 🎁',
+    Date(year: 2022, month: 2, day: 14): 'St. Valentines Day 💖',
+    Date(year: 2022, month: 2, day: 23): 'The cinema attendance 📽',
+    Date(year: 2022, month: 5, day: 23): 'A long-awaited Moment 🔥',
+  };
+
+  /// Returns an event descriptions based on the provided date parts.
+  ///
+  /// If no date parts provided or no corresponding event descriptions are found, the method returns
+  /// null.
+  ///
+  static String? query({int? year, int? month, int? day}) {
+    // handle empty requests
+    if (year == null && month == null && day == null) {
+      return null;
+    }
+
+    // find the first event corresponding to the given date
+    final res = _records.entries
+        .firstWhere(
+            (record) =>
+            record.key.satisfies(year: year, month: month, day: day),
+        orElse: () => MapEntry(Date.empty(), ''))
+        .value;
+    return (res.isEmpty ? null : res);
+  }
+}
 ```
 
 The output of the example above:

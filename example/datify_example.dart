@@ -41,7 +41,6 @@ void main() {
   }
 }
 
-// =============================================================================
 
 /// Database emulation for the example.
 ///
@@ -80,6 +79,8 @@ abstract class Events {
     return (res.isEmpty ? null : res);
   }
 }
+
+// =============================================================================
 
 /// The class that represents a date in the example.
 ///
