@@ -1,3 +1,6 @@
+[![pub package](https://img.shields.io/pub/v/datify.svg)](https://pub.dev/packages/datify)
+[![package publisher](https://img.shields.io/pub/publisher/datify.svg)](https://pub.dev/packages/datify/publisher)
+
 ## Automatic flexible date extracting from strings in any formats.
 
 **Datify** makes it easy to extract dates from strings in _(nearly)_ any formats.
