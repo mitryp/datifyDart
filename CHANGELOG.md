@@ -16,3 +16,7 @@
 ## 1.0.3
 
 - Extended the example in the README
+
+## 1.0.4
+
+- Fixed a mistake in README
