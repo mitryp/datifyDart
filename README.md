@@ -1,3 +1,4 @@
+[![Dart Tests](https://github.com/mitryp/datifyDart/actions/workflows/dart.yml/badge.svg)](https://github.com/mitryp/datifyDart/actions/workflows/dart.yml?branch=master)
 [![pub package](https://img.shields.io/pub/v/datify.svg)](https://pub.dev/packages/datify)
 [![package publisher](https://img.shields.io/pub/publisher/datify.svg)](https://pub.dev/packages/datify/publisher)
 
