@@ -41,7 +41,6 @@ void main() {
   }
 }
 
-
 /// Database emulation for the example.
 ///
 /// This class stored dates and the corresponding event descriptions and provides the method for

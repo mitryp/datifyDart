@@ -144,14 +144,14 @@ After the parsing is done, the result can be retrieved in a different ways:
 
   The result is considered complete when the `year`, `month`, and `day` fields are not null of the result are not null.
 
-  To make sure the parsed result is complete and can be transformed to a DateTime, the `bool complete` getter is used.
+  To make sure the parsed result is complete and can be transformed to a DateTime, the `bool isComplete` getter is used.
 
 
 * To get the not nullable result independent of the parsing result, use the `DatifyResult result` getter.
 
   It will return a `DatifyResult` object which is not nullable by itself, but its fields may be null.
 
-  The `DatifyResult` object has the nullable `year`, `month`, and `day` final fields, the `complete` and `date` getters
+  The `DatifyResult` object has the nullable `year`, `month`, and `day` final fields, the `isComplete` and `date` getters
   that work just as the respective getters of the Datify instances. Moreover, the DatifyResult object can be transformed
   to a `Map<String, int?>` with the predefined structure. See the DatifyResult description for more details.
 

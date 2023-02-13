@@ -36,7 +36,7 @@ void main() {
     test('multiline dates are defined correctly', () {
       expect(Datify.parse('''31.
         12
-        .2003''').complete, true);
+        .2003''').isComplete, true);
     });
   });
 
@@ -186,7 +186,7 @@ void main() {
 
       final dateString = [10, 07, 2006].join(sep);
       final d = Datify.parse(dateString);
-      expect(d.complete, true);
+      expect(d.isComplete, true);
 
       DatifyConfig.splitters.remove(sep);
     });

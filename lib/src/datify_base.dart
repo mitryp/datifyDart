@@ -321,13 +321,13 @@ class Datify {
 
   /// Returns true if all the date parts of the date are not null. Otherwise, returns false.
   ///
-  bool get complete => day != null && month != null && year != null;
+  bool get isComplete => day != null && month != null && year != null;
 
   /// Returns a [DateTime] object of the parsed date if the date is complete.
   ///
   /// If any of the date parts are null, the method will return null instead.
   ///
-  DateTime? get date => (complete ? DateTime(year!, month!, day!) : null);
+  DateTime? get date => (isComplete ? DateTime(year!, month!, day!) : null);
 
   /// Returns a [DatifyResult] object with the values of the [Datify.parse].
   ///
@@ -337,7 +337,7 @@ class Datify {
 
   @override
   String toString() {
-    return 'Datify{year: $year, month: $month, day: $day}';
+    return 'Datify(year: $year, month: $month, day: $day)';
   }
 
   @override
@@ -397,23 +397,21 @@ class DatifyResult {
   ///   "day": day | null
   /// }
   /// ```
-  Map<String, int?> toMap() {
-    return {'year': year, 'month': month, 'day': day};
-  }
+  Map<String, int?> toMap() => {'year': year, 'month': month, 'day': day};
 
   /// Returns true if all the values of the result are not null.
   ///
   /// If the result is complete, this means that it can be successfully transformed into a
   /// [DateTime] object with the [date] getter.
   ///
-  bool get complete => year != null && month != null && day != null;
+  bool get isComplete => year != null && month != null && day != null;
 
   /// Returns the [DateTime] object with the values of the result.
   /// This works if all the values of the result are not null.
   ///
   /// If the result is incomplete, this getter will return null instead.
   ///
-  DateTime? get date => (complete ? DateTime(year!, month!, day!) : null);
+  DateTime? get date => (isComplete ? DateTime(year!, month!, day!) : null);
 
   @override
   String toString() {

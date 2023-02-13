@@ -11,12 +11,18 @@
 
 ## 1.0.2
 
-- Added the documentation link in README
+- Added the documentation link in README.
 
 ## 1.0.3
 
-- Extended the example in the README
+- Extended the example in the README.
 
 ## 1.0.4
 
-- Fixed a mistake in README
+- Fixed a mistake in README.
+
+## 1.1.0
+
+- Changed the minimum Dart SDK version to 2.17.0.
+- Changed `complete` getter in the `Datify` and `DatifyResult` classes to `isComplete` to follow the Effective Dart
+  guidelines.
