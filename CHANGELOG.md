@@ -30,3 +30,5 @@
 ## 1.1.1
 
 - Fixed bug causing the inability to parse day values which start with zero (e.g. `02`).
+- Improved internal structure, split the source code into multiple files to improve readability.
+- Several code readability improvements, still to be cleaned up.

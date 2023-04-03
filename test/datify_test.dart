@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:datify/datify.dart';
+import 'package:datify/src/config.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -34,9 +35,12 @@ void main() {
     });
 
     test('multiline dates are defined correctly', () {
-      expect(Datify.parse('''31.
+      expect(
+        Datify.parse('''31.
         12
-        .2003''').isComplete, true);
+        .2003''').isComplete,
+        true,
+      );
     });
   });
 
@@ -233,18 +237,27 @@ void main() {
         final expected = data.values.first;
 
         final d = Datify.parse(dateString);
-        expect(d, expected,
-            reason: 'Date of $dateString should be equal to $expected');
+        expect(
+          d,
+          expected,
+          reason: 'Date of $dateString should be equal to $expected',
+        );
 
         final actualDateTime = d.date;
         final expectedDateTime =
             DateTime(expected.year!, expected.month!, expected.day!);
-        expect(actualDateTime, expectedDateTime,
-            reason: 'DateTime of $d should be equal to $expectedDateTime');
+        expect(
+          actualDateTime,
+          expectedDateTime,
+          reason: 'DateTime of $d should be equal to $expectedDateTime',
+        );
 
-        expect(d.result.date, expectedDateTime,
-            reason:
-                'Result ${d.result}.date should be equal to $expectedDateTime');
+        expect(
+          d.result.date,
+          expectedDateTime,
+          reason:
+              'Result ${d.result}.date should be equal to $expectedDateTime',
+        );
       }
     });
   });
@@ -266,14 +279,17 @@ void main() {
         'Décembre',
       ];
 
-      expect(() => DatifyConfig.addNewMonthsLocale(['1', '2', '3']),
-          throwsArgumentError,
-          reason: 'Wrong month names length should throw an ArgumentError');
+      expect(
+        () => DatifyConfig.addNewMonthsLocale(['1', '2', '3']),
+        throwsArgumentError,
+        reason: 'Wrong month names length should throw an ArgumentError',
+      );
 
       expect(
-          () => DatifyConfig.addNewMonthsLocale(frenchMonths), returnsNormally,
-          reason:
-              'Adding months with correct length should execute successfully');
+        () => DatifyConfig.addNewMonthsLocale(frenchMonths),
+        returnsNormally,
+        reason: 'Adding months with correct length should execute successfully',
+      );
     });
 
     test('added months are defined correctly', () {
