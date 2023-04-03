@@ -483,7 +483,7 @@ abstract class DatifyConfig {
   /// The day format which is one or two digits day that may be followed by any non-digit
   /// character(s): D?D.
   ///
-  static const dayFormat = r'\b(([1-9])|([12]\d)|(3[01]))(\b|(?=\D))';
+  static const dayFormat = r'\b((0?[1-9])|([12]\d)|(3[01]))(\b|(?=\D))';
 
   /// The digit month format which is one or two digits month: M?M.
   ///

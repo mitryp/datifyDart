@@ -15,7 +15,7 @@
 
 ## 1.0.3
 
-- Extended the example in the README.
+- Extended the example in README.
 
 ## 1.0.4
 
@@ -26,3 +26,7 @@
 - Changed the minimum Dart SDK version to 2.17.0.
 - Changed `complete` getter in the `Datify` and `DatifyResult` classes to `isComplete` to follow the Effective Dart
   guidelines.
+
+## 1.1.1
+
+- Fixed bug causing the inability to parse day values which start with zero (e.g. `02`).
