@@ -20,8 +20,7 @@ enum DatePart {
   /// the resulting order list will not contain the respective date parts, what allows to prevent
   /// multiple of the predefined values.
   ///
-  static List<DatePart> order(
-    bool dayFirst, {
+  static List<DatePart> order({
     bool yearDefined = false,
     bool monthDefined = false,
     bool dayDefined = false,
@@ -29,20 +28,18 @@ enum DatePart {
     final dayMonth = [if (!dayDefined) day, if (!monthDefined) month];
 
     return [
-      ...(dayFirst ? dayMonth : dayMonth.reversed),
+      ...(DatifyConfig.dayFirst ? dayMonth : dayMonth.reversed),
       if (!yearDefined) year
     ];
   }
 
   /// Returns the pattern corresponding to the specific date part.
   ///
-  RegExp get pattern {
-    const formats = {
-      DatePart.day: DatifyConfig.dayFormat,
-      DatePart.month: DatifyConfig.monthDigitFormat,
-      DatePart.year: DatifyConfig.yearFormat
-    };
-
-    return RegExp(formats[this]!);
-  }
+  RegExp get pattern => RegExp(_partsToFormats[this]!);
 }
+
+const _partsToFormats = {
+  DatePart.day: DatifyConfig.dayFormat,
+  DatePart.month: DatifyConfig.monthDigitFormat,
+  DatePart.year: DatifyConfig.yearFormat
+};

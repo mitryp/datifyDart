@@ -3,7 +3,7 @@
 - Initial version.
 - Fully rewritten the [Python implementation](https://github.com/mitryp/datify) of Datify in Dart.
 - Major logic and core improvements.
-- Written the unit tests to cover all expected cases of the usage.
+- Written the unit tests to cover all expected cases of usage.
 
 ## 1.0.1
 
@@ -32,3 +32,9 @@
 - Fixed bug causing the inability to parse day values which start with zero (e.g. `02`).
 - Improved internal structure, split the source code into multiple files to improve readability.
 - Several code readability improvements, still to be cleaned up.
+
+## 1.1.2
+
+- Improved overall performance of parsing.
+- Significantly improved performance of parsing dates in American format, i.e. when month goes first.
+- Code readability, internal structure, and logic improvements.

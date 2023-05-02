@@ -1,6 +1,6 @@
 name: datify
 description: An extensible library that provides the functionality of the parsing strings in different formats to extract dates.
-version: 1.1.1
+version: 1.1.2
 repository: https://github.com/mitryp/datifyDart
 
 environment:

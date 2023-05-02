@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:datify/datify.dart';
-import 'package:datify/src/config.dart';
 import 'package:test/test.dart';
 
 void main() {

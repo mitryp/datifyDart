@@ -1,7 +1,7 @@
 import 'dart:math';
 
-import 'config.dart';
-import 'util.dart';
+import '../config.dart';
+import '../util.dart';
 
 /// The function that is used to make a deduction if the two given string are different forms of
 /// the same word or not.
@@ -30,21 +30,28 @@ bool _isSameWord(String s1, String s2) {
 /// If no corresponding month name is found, then returns null.
 ///
 int? tryParseMonth(String input) {
+  // skip if input has digits, as it is definitely not an alphabetic month
+  if (!RegExp(r'^\D+$').hasMatch(input)) {
+    return null;
+  }
+
+  final normalizedInput = normalize(input);
+
   for (var month = 0; month < DatifyConfig.months.length; month++) {
-    if (DatifyConfig.months.elementAt(month).contains(normalize(input))) {
+    if (DatifyConfig.months.elementAt(month).contains(normalizedInput)) {
       return month + 1;
     }
   }
 
-  for (var monthIndex = 0;
-      monthIndex < DatifyConfig.months.length;
-      monthIndex++) {
-    final currentMonthNames = DatifyConfig.months[monthIndex];
+  Set<String> currentMonthNames;
+  for (var month = 0; month < DatifyConfig.months.length; month++) {
+    currentMonthNames = DatifyConfig.months[month];
     for (final name in currentMonthNames) {
       if (input == name || _isSameWord(input, name)) {
-        return monthIndex + 1;
+        return month + 1;
       }
     }
   }
+
   return null;
 }
