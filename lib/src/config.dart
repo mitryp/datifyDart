@@ -179,9 +179,10 @@ abstract class DatifyConfig {
   ///
   static void addNewMonthName(int ordinal, String monthName) {
     if (ordinal < 1 || ordinal > 12) {
-      throw IndexError.withLength(ordinal, months.length,
-          message:
-              'Invalid month ordinal. Months ordinal must be between 1 and 12 inclusive');
+      throw StateError(
+        'Invalid month ordinal: $ordinal. Months ordinal must be '
+        'between 1 and 12 inclusive',
+      );
     }
 
     // normalize the month name

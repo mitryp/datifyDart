@@ -38,3 +38,10 @@
 - Improved overall performance of parsing.
 - Significantly improved performance of parsing dates in American format, i.e. when month goes first.
 - Code readability, internal structure, and logic improvements.
+
+## 1.1.3
+
+- Raised the maximum Dart SDK version to support Dart 3.
+- Added the issue tracker link to the pubspec file.
+- Changed the `IndexError` to `StateError` to remove the deprecation warning and keep the minimum Dart SDK version at
+  2.17.0.
