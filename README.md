@@ -2,7 +2,7 @@
 [![pub package](https://img.shields.io/pub/v/datify.svg)](https://pub.dev/packages/datify)
 [![package publisher](https://img.shields.io/pub/publisher/datify.svg)](https://pub.dev/packages/datify/publisher)
 
-## Automatic flexible date extracting from strings in any formats.
+## Flexible automatic date extracting from strings in any formats.
 
 **Datify** makes it easy to extract dates from strings in _(nearly)_ any formats.
 
@@ -17,7 +17,7 @@ The date formats supported by Datify are the following:
 
 See the [Formats](#Formats) section for the detailed information about the supported formats.
 
-The behavior of Datify can be configured with the DatifyConfig - see [Configuration](#Configuring-Datify) section.
+The behavior of Datify can be configured with DatifyConfig - see [Configuration](#Configuring-Datify) section.
 
 ### Month name languages supported by default:
 
@@ -30,13 +30,13 @@ The behavior of Datify can be configured with the DatifyConfig - see [Configurat
 ## Example
 
 ___
-See the `example/datify_example.dart` for full example.
+See the `example/datify_example.dart` for the full example.
 
 ```dart
 String handleRequest(SearchRequest searchRequest) {
   final dateQuery = searchRequest['date'];
 
-  // the Datify handles all the parsing inside freeing
+  // Datify handles all the parsing inside freeing
   // you from even thinking about it!
   final res = Datify
       .parse(dateQuery)
@@ -50,7 +50,7 @@ String handleRequest(SearchRequest searchRequest) {
 }
 
 void main() {
-  // define dates in the different formats
+  // define dates in different formats
   const dates = [
     '31.12.2021',     // common digit-only date format
     '2022-02-23',     // another commonly-used date format
@@ -85,7 +85,7 @@ abstract class Events {
 
   /// Returns an event descriptions based on the provided date parts.
   ///
-  /// If no date parts provided or no corresponding event descriptions are found, the method returns
+  /// If no date parts are provided or no corresponding event description is found, the method returns
   /// null.
   ///
   static String? query({int? year, int? month, int? day}) {
@@ -125,7 +125,7 @@ _Uncritical code was omitted._
 ## Data parsing
 
 To extract a date from a string, use the `.parse` constructor of the `Datify` class.
-The constructor takes a nullable input string and the optional parameters `year`, `month`, and `day`.
+The constructor takes a nullable input string and optional parameters `year`, `month`, and `day`.
 
 After that the input string will be parsed. If the optional parameters were given, the respective object fields will
 have the provided values.
@@ -140,14 +140,14 @@ After the parsing is done, the result can be retrieved in a different ways:
 
 * If the date is complete, the result can be transformed into a `DateTime` object with the `DateTime? date` getter.
 
-  However, if the date is incomplete the `date` getter will return null.
+  However, if the date is incomplete, the `date` getter will return null.
 
-  The result is considered complete when the `year`, `month`, and `day` fields are not null of the result are not null.
+  The result is considered complete when the `year`, `month`, and `day` fields of the result are not null.
 
   To make sure the parsed result is complete and can be transformed to a DateTime, the `bool isComplete` getter is used.
 
 
-* To get the not nullable result independent of the parsing result, use the `DatifyResult result` getter.
+* To get a non-nullable result independent of the parsing result, use the `DatifyResult result` getter.
 
   It will return a `DatifyResult` object which is not nullable by itself, but its fields may be null.
 
@@ -156,7 +156,7 @@ After the parsing is done, the result can be retrieved in a different ways:
   to a `Map<String, int?>` with the predefined structure. See the DatifyResult description for more details.
 
 
-* The Datify instance itself has the `year`, `month`, and `day` mutable nullable fields, that can be used to access
+* The Datify instance itself has the mutable nullable fields `year`, `month`, and `day`, which can be used to access
   the parsing result.
 
 ## Formats
@@ -204,27 +204,27 @@ The following can be customized:
    > Splitters can also be string more than one character long
 
 
-2. Month names localizations, different month aliases.
+2. Month names localization, different month aliases.
    By default, Datify supports English, English shortened, Ukrainian and Russian month names:
    `{'january','jan','січень','январь',}`
 
-   More localizations can be added whenever they needed with the `DatifyConfig`:
+   More localizations can be added whenever they needed with `DatifyConfig`:
 
 
-  * To add a new month name for the specified month, the `DatifyConfig.addNewMonthName(int ordinal, String name)` method
-    is used. The `ordinal` argument takes int number in range [1, 12] inclusive to represent the month number.
+* To add a new month name for the specific month, the `DatifyConfig.addNewMonthName(int ordinal, String name)` method
+  is used. The `ordinal` argument takes int number in range [1, 12] inclusive to represent the month number.
 
-    For example, to add the French name, `Septembre`, for the 9th month, the following syntax is used:
-    ```dart
-    DatifyConfig.addNewMonthName(9, 'Septembre');
-    ```
-    _If the `ordinal` is not in the defined range, the IndexError will be thrown._
+  For example, to add the French name, `Septembre`, for the 9th month, the following syntax is used:
+  ```dart
+  DatifyConfig.addNewMonthName(9, 'Septembre');
+  ```
+  _If the `ordinal` is not in the defined range, the StateError will be thrown._
 
 
-* To add a new entire localization, which consists of the 12 ordered month names, the
+* To add an entire new localization, which consists of 12 ordered month names, the
   `DatifyConfig.addNewMonthsLocale(Iterable<String> monthNames)` method is used.
 
-  > The `monthNames` iterable must have a length of 12 and consist of the unique elements
+  > The `monthNames` iterable must have the length of 12 and consist of the unique elements
   If these conditions are not satisfied, the ArgumentError will be thrown.
 
   For example, to add the French month localization, the following syntax is used:
@@ -240,11 +240,11 @@ The following can be customized:
   > Note: The months should be ordered in the months order for the correct work.
 
 ### Motivation
-The Datify library was originally [developed](https://github.com/mitryp/datify) in Python in the summer of 2021, when I 
-was working on my first pet project which needed to support user input of dates in any formats.
+Datify was originally developed [in Python]((https://github.com/mitryp/datify)) in the summer of 2021, when I
+was working on my first pet project which needed to support user input of dates in various formats.
 
 It was fascinating to write, and I decided to maintain the library.
 
-In the Dart implementation, there are several major logic improvements;
+In Dart implementation, there are several major logic and performance improvements;
 
-Also, the regular expressions used in Python were replaced with the new ones, that work more predictable.
+Also, the regular expressions used in Python were replaced with the new ones, which work more predictable.
