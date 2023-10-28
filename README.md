@@ -240,7 +240,7 @@ The following can be customized:
   > Note: The months should be ordered in the months order for the correct work.
 
 ### Motivation
-Datify was originally developed [in Python]((https://github.com/mitryp/datify)) in the summer of 2021, when I
+Datify was originally developed in Python in the summer of 2021, when I
 was working on my first pet project which needed to support user input of dates in various formats.
 
 It was fascinating to write, and I decided to maintain the library.
