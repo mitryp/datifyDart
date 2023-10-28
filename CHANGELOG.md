@@ -1,3 +1,7 @@
+# 1.1.5
+
+- Fixed a link in the README.
+
 # 1.1.4
 
 - Fixed typos and grammar mistakes in the README.md.
