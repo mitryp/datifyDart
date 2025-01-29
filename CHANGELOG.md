@@ -1,3 +1,7 @@
+# 1.1.6
+
+- Fixed Pub static analysis warnings about angle brackets being interpreted as HTML.
+
 # 1.1.5
 
 - Fixed a link in the README.
