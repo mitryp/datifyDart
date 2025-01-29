@@ -8,7 +8,7 @@
 ///
 /// The result has the [year], [month], and [day] nullable final fields.
 ///
-/// The result can be transformed into Map<String, int?> with the [toMap] method.
+/// The result can be transformed into a Map\<String, int?\> with the [toMap] method.
 ///
 class DatifyResult {
   // TODO: decide if we need it or not

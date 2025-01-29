@@ -79,13 +79,13 @@ abstract class DatifyConfig {
   static String get dateFormat =>
       _dateFormat.replaceAll(RegExp('##'), '${splitterPattern.pattern}?');
 
-  /// The list of Set<String> that represents the supported names of each month of the year.
+  /// The list of String sets that contains supported names of each month of the year.
   ///
   /// The first month is represented by the months[0] element.
   ///
-  /// Each set contains the lowercase and trimmed names of the months represented by the set.
+  /// Each set contains trimmed lowercase names of the month represented by the set.
   ///
-  /// *It's possible to add more localizations to the Datify. See [addNewMonthName]
+  /// *It's possible to add more localizations to Datify. See the [addNewMonthName]
   /// and [addNewMonthsLocale] methods.*
   ///
   static final months = [
