@@ -1,290 +1,45 @@
-import 'util.dart';
+import 'datify.dart';
+import 'locale.dart';
 
-String? _cachedSplittersKey;
-late RegExp _cachedSplitterPattern;
-late String _cachedDateFormat;
-
-void _updateSplitterCache() {
-  final key = DatifyConfig.splitters.join('\u0000');
-  if (key == _cachedSplittersKey) return;
-
-  _cachedSplittersKey = key;
-  _cachedSplitterPattern =
-      RegExp('(${DatifyConfig.splitters.map(RegExp.escape).join("|")})');
-  _cachedDateFormat = DatifyConfig._dateFormat
-      .replaceAll('##', '${_cachedSplitterPattern.pattern}?');
-}
-
-/// The class that is used to store the local Datify settings.
+/// The settings of a [Datify] parser.
 ///
-/// It stores the local settings that are used to control the Datify behavior in the desired way.
+/// ```dart
+/// const datify = Datify(DatifyConfig(dayFirst: false, locales: [DatifyLocale.en]));
+/// ```
 ///
-/// The following options are available:
-/// * [dayFirst] - defines if the day is parsed before the month or after it (American format).
-/// * [splitters] - defines the set of supported splitters, that are used to separate the date parts
-/// during the parsing process.
-/// * localization - not an option name itself.
+/// Parsers index the month names of their locales once, so reuse a config instead of creating one
+/// per parse, and don't modify the lists passed to it.
 ///
-/// **There are several localization methods provided:**
-/// * [addNewMonthName] - adds a new month name to the month with the given ordinal number.
-/// After the addition, the new month name will be parsed alongside the default ones and
-/// represent the month with the given ordinal number.
-/// * [addNewMonthsLocale] - adds a new locale to the config. Takes the list of month names with the
-/// length of 12 in the month order.
-///
-/// *See the methods documentation for more detailed information.*
-///
-abstract class DatifyConfig {
-  /// This option defines the order of the date parts parsing.
-  /// false value is used to parse the American date format (MM.DD.YYYY) correctly.
+final class DatifyConfig {
+  /// Whether the day comes before the month in ambiguous numeric dates such as `05/06/2021`.
   ///
-  /// The default value is true, which represents the DD.MM.YYYY date format.
+  /// When one of the numbers is greater than 12, the order is detected regardless of this setting,
+  /// so `12/31/2021` is always December 31.
   ///
-  /// Example:
-  /// ```dart
-  /// Datify.parse('01/03/2014'); // Datify{year=2014, month=3, day=1} -- the default setting which is true
-  ///
-  /// DatifyConfig.dayFirst = false; // switching to the American format
-  /// Datify.parse('01/03/2014'); // Datify{year=2014, month=1, day=3} -- the behavior changed
-  /// ```
-  ///
-  static var dayFirst = true;
+  final bool dayFirst;
 
-  /// The Set of the supported date splitters.
-  /// The external splitters may be added to extend the supported date formats.
+  /// The characters that may separate the numbers of a date, in addition to whitespace.
   ///
-  /// Example:
-  /// ```dart
-  /// Datify.parse('10@12@2012'); // Datify{year=null, month=null, day=null} -- the splitter is not supported yet.
+  /// Each separator must be a single character that is not a letter, a digit, or whitespace;
+  /// otherwise, parsing throws an [ArgumentError].
   ///
-  /// DatifyConfig.splitters.add('@'); // added to extend the supported date splitters
-  /// Datify.parse('10@12@2012'); // Datify{year=2012, month=12, day=10}
-  ///                            // -- the splitters list was extended and now includes the desired one
-  /// ```
-  ///
-  static final splitters = {' ', '/', '.', '-'};
+  final Set<String> separators;
 
-  /// The day format which is one or two digits day that may be followed by any non-digit
-  /// character(s): D?D.
+  /// The languages in which month names are recognized.
   ///
-  static const dayFormat = r'\b((0?[1-9])|([12]\d)|(3[01]))(\b|(?=\D))';
+  final List<DatifyLocale> locales;
 
-  /// The digit month format which is one or two digits month: M?M.
+  /// Whether to fall back to picking date parts from anywhere in the input when it contains no date
+  /// that Datify recognizes, such as in `12 2020 march`.
   ///
-  static const monthDigitFormat = r'\b((0?[1-9])|(1[012]))\b';
+  /// This finds dates in more unusual orders, but may also take unrelated numbers for date parts.
+  ///
+  final bool lenient;
 
-  /// The year format which is (1|2)YYY.
-  ///
-  static const yearFormat = r'\b[12]\d\d\d\b';
-
-  /// The general date pattern with a placeholder on the place where the splitter pattern should be.
-  ///
-  static const _dateFormat =
-      r'\b[12]\d\d\d##((0[1-9])|(1[012]))##(([012]\d)|(3[01]))(?!\d)';
-
-  /// The pattern that describes any of the supported date splitters.
-  ///
-  static RegExp get splitterPattern {
-    _updateSplitterCache();
-    return _cachedSplitterPattern;
-  }
-
-  /// The pattern of the general date format.
-  /// Is used to find patterns of format YYYYMMDD. There could be any of the supported date splitters
-  /// between the date parts like this: YYYY-MM.DD. The date may be directly followed by a time,
-  /// as in ISO 8601 timestamps: 2020-01-01T10:00:00Z.
-  ///
-  static String get dateFormat {
-    _updateSplitterCache();
-    return _cachedDateFormat;
-  }
-
-  /// The list of String sets that contains supported names of each month of the year.
-  ///
-  /// The first month is represented by the months[0] element.
-  ///
-  /// Each set contains trimmed lowercase names of the month represented by the set.
-  ///
-  /// *It's possible to add more localizations to Datify. See the [addNewMonthName]
-  /// and [addNewMonthsLocale] methods.*
-  ///
-  /// The names are indexed for fast lookup, and the index is rebuilt when the total number of names
-  /// changes. A direct change that keeps the number of names the same, such as replacing one name
-  /// with another, is not picked up.
-  ///
-  static final months = [
-    {
-      'january',
-      'jan',
-      'січень',
-      'січня',
-      'январь',
-      'января',
-    },
-    {
-      'february',
-      'feb',
-      'лютий',
-      'лютого',
-      'февраль',
-      'февраля',
-    },
-    {
-      'march',
-      'mar',
-      'березень',
-      'березня',
-      'март',
-      'марта',
-    },
-    {
-      'april',
-      'apr',
-      'квітень',
-      'квітня',
-      'апрель',
-      'апреля',
-    },
-    {
-      'may',
-      'травень',
-      'травня',
-      'май',
-      'мая',
-    },
-    {
-      'june',
-      'jun',
-      'червень',
-      'червня',
-      'июнь',
-      'июня',
-    },
-    {
-      'july',
-      'jul',
-      'липень',
-      'липня',
-      'июль',
-      'июля',
-    },
-    {
-      'august',
-      'aug',
-      'серпень',
-      'серпня',
-      'август',
-      'августа',
-    },
-    {
-      'september',
-      'sep',
-      'вересень',
-      'вересня',
-      'сентябрь',
-      'сентября',
-    },
-    {
-      'october',
-      'oct',
-      'жовтень',
-      'жовтня',
-      'октябрь',
-      'октября',
-    },
-    {
-      'november',
-      'nov',
-      'листопад',
-      'листопада',
-      'ноябрь',
-      'ноября',
-    },
-    {
-      'december',
-      'dec',
-      'грудень',
-      'грудня',
-      'декабрь',
-      'декабря',
-    },
-  ];
-
-  /// Adds the given month name to the set of the month with the given ordinal number.
-  ///
-  /// The ordinal number must be in the range **[1,12]** inclusive to represent the month.
-  /// Otherwise, the method will throw a [StateError].
-  ///
-  /// The given month name will be added to the set of the month names with the given ordinal number
-  /// and will represent the month with the given ordinal number.
-  ///
-  /// Example:
-  /// ```dart
-  /// // DatifyConfig.addNewMonthName(20, 'January'); // throws a StateError
-  /// DatifyConfig.addNewMonthName(3, 'March'); // 'March' was added to the set of the month names that represent the third month
-  /// ```
-  /// *The preceding example is only an illustration: the English localization is already included in the configuration.*
-  ///
-  static void addNewMonthName(int ordinal, String monthName) {
-    if (ordinal < 1 || ordinal > 12) {
-      throw StateError(
-        'Invalid month ordinal: $ordinal. Months ordinal must be '
-        'between 1 and 12 inclusive',
-      );
-    }
-
-    // normalize the month name
-    final normalizedName = normalize(monthName);
-
-    // add the month name to the respective month name set
-    months.elementAt(ordinal - 1).add(normalizedName);
-  }
-
-  /// Adds the new month localization to the configuration.
-  ///
-  /// This function takes the list of month names which will be added to the respective month name
-  /// set of the configuration.
-  ///
-  /// The list must have the length of **12** to represent each month.
-  ///
-  /// The list items must be ordered **in the natural months order**.
-  ///
-  /// The list items must be **unique**.
-  ///
-  /// Example:
-  /// ```dart
-  /// // DatifyConfig.addNewMonthsLocale(['january', 'february']); // throws an ArgumentError exception
-  /// DatifyConfig.addNewMonthsLocale(['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']);
-  /// // The list of items was added to the config as follows:
-  /// // 'january' to represent the first month,
-  /// // 'february' to represent the second month,
-  /// // ...
-  /// ```
-  /// *The preceding example is only an illustration: the English localization is already included in the configuration.*
-  ///
-  static void addNewMonthsLocale(List<String> monthNames) {
-    // check the collection length - it must be 12 to represent the months
-    if (monthNames.length != 12) {
-      throw ArgumentError.value(
-          monthNames.length,
-          'monthNames',
-          'The length of months localization '
-              'should be 12; it was ${monthNames.length} instead');
-    }
-
-    // check the collection elements to be unique
-    if (Set.of(monthNames).length != monthNames.length) {
-      throw ArgumentError.value(
-          monthNames, 'monthNames', 'Month names should be unique');
-    }
-
-    // normalize the month name
-    var normalizedMonths = monthNames.map(normalize);
-
-    // add the months to the configuration in the storage order
-    for (var ordinal = 0; ordinal < normalizedMonths.length; ordinal++) {
-      DatifyConfig.addNewMonthName(
-          ordinal + 1, normalizedMonths.elementAt(ordinal));
-    }
-  }
+  const DatifyConfig({
+    this.dayFirst = true,
+    this.separators = const {'/', '.', '-'},
+    this.locales = DatifyLocale.builtIn,
+    this.lenient = false,
+  });
 }
