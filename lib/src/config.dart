@@ -1,11 +1,26 @@
 import 'util.dart';
 
+String? _cachedSplittersKey;
+late RegExp _cachedSplitterPattern;
+late String _cachedDateFormat;
+
+void _updateSplitterCache() {
+  final key = DatifyConfig.splitters.join('\u0000');
+  if (key == _cachedSplittersKey) return;
+
+  _cachedSplittersKey = key;
+  _cachedSplitterPattern =
+      RegExp('(${DatifyConfig.splitters.map(RegExp.escape).join("|")})');
+  _cachedDateFormat = DatifyConfig._dateFormat
+      .replaceAll('##', '${_cachedSplitterPattern.pattern}?');
+}
+
 /// The class that is used to store the local Datify settings.
 ///
 /// It stores the local settings that are used to control the Datify behavior in the desired way.
 ///
 /// The following options are available:
-/// * [dayFirst] - defines if the day is parsed before the month of after it (American format).
+/// * [dayFirst] - defines if the day is parsed before the month or after it (American format).
 /// * [splitters] - defines the set of supported splitters, that are used to separate the date parts
 /// during the parsing process.
 /// * localization - not an option name itself.
@@ -40,10 +55,10 @@ abstract class DatifyConfig {
   ///
   /// Example:
   /// ```dart
-  /// Datify.parse('10@12@2012); // Datify{year=null, month=null, day=null} -- the splitter is not supported yet.
+  /// Datify.parse('10@12@2012'); // Datify{year=null, month=null, day=null} -- the splitter is not supported yet.
   ///
   /// DatifyConfig.splitters.add('@'); // added to extend the supported date splitters
-  /// Datify.parse('10@12@2012); // Datify{year=2012, month=12, day=10}
+  /// Datify.parse('10@12@2012'); // Datify{year=2012, month=12, day=10}
   ///                            // -- the splitters list was extended and now includes the desired one
   /// ```
   ///
@@ -65,19 +80,24 @@ abstract class DatifyConfig {
   /// The general date pattern with a placeholder on the place where the splitter pattern should be.
   ///
   static const _dateFormat =
-      r'\b[12]\d\d\d##((0[1-9])|(1[012]))##(([012]\d)|(3[01]))\b';
+      r'\b[12]\d\d\d##((0[1-9])|(1[012]))##(([012]\d)|(3[01]))(?!\d)';
 
   /// The pattern that describes any of the supported date splitters.
   ///
-  static RegExp get splitterPattern =>
-      RegExp('(${splitters.map(RegExp.escape).join("|")})');
+  static RegExp get splitterPattern {
+    _updateSplitterCache();
+    return _cachedSplitterPattern;
+  }
 
   /// The pattern of the general date format.
   /// Is used to find patterns of format YYYYMMDD. There could be any of the supported date splitters
-  /// between the date parts like this: YYYY-MM.DD.
+  /// between the date parts like this: YYYY-MM.DD. The date may be directly followed by a time,
+  /// as in ISO 8601 timestamps: 2020-01-01T10:00:00Z.
   ///
-  static String get dateFormat =>
-      _dateFormat.replaceAll(RegExp('##'), '${splitterPattern.pattern}?');
+  static String get dateFormat {
+    _updateSplitterCache();
+    return _cachedDateFormat;
+  }
 
   /// The list of String sets that contains supported names of each month of the year.
   ///
@@ -93,86 +113,110 @@ abstract class DatifyConfig {
       'january',
       'jan',
       'січень',
+      'січня',
       'январь',
+      'января',
     },
     {
       'february',
       'feb',
       'лютий',
+      'лютого',
       'февраль',
+      'февраля',
     },
     {
       'march',
       'mar',
       'березень',
+      'березня',
       'март',
+      'марта',
     },
     {
       'april',
       'apr',
       'квітень',
+      'квітня',
       'апрель',
+      'апреля',
     },
     {
       'may',
       'травень',
+      'травня',
       'май',
+      'мая',
     },
     {
       'june',
       'jun',
       'червень',
+      'червня',
       'июнь',
+      'июня',
     },
     {
       'july',
       'jul',
       'липень',
+      'липня',
       'июль',
+      'июля',
     },
     {
       'august',
       'aug',
       'серпень',
+      'серпня',
       'август',
+      'августа',
     },
     {
       'september',
       'sep',
       'вересень',
+      'вересня',
       'сентябрь',
+      'сентября',
     },
     {
       'october',
       'oct',
       'жовтень',
+      'жовтня',
       'октябрь',
+      'октября',
     },
     {
       'november',
       'nov',
       'листопад',
+      'листопада',
       'ноябрь',
+      'ноября',
     },
     {
       'december',
       'dec',
       'грудень',
+      'грудня',
       'декабрь',
-    }
+      'декабря',
+    },
   ];
 
   /// Adds the given month name to the set of the month with the given ordinal number.
   ///
   /// The ordinal number must be in the range **[1,12]** inclusive to represent the month.
-  /// Otherwise, the method will throw an IndexError exception.
+  /// Otherwise, the method will throw a [StateError].
   ///
   /// The given month name will be added to the set of the month names with the given ordinal number
   /// and will represent the month with the given ordinal number.
   ///
   /// Example:
   /// ```dart
-  /// // DatifyConfig.addNewMonthName(20, 'January'); // throws an IndexError exception
+  /// // DatifyConfig.addNewMonthName(20, 'January'); // throws a StateError
   /// DatifyConfig.addNewMonthName(3, 'March'); // 'March' was added to the set of the month names that represent the third month
   /// ```
   /// *The preceding example is only an illustration: the English localization is already included in the configuration.*
@@ -206,7 +250,7 @@ abstract class DatifyConfig {
   /// Example:
   /// ```dart
   /// // DatifyConfig.addNewMonthsLocale(['january', 'february']); // throws an ArgumentError exception
-  /// DatifyConfig.addNewMonthsLocale('january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december');
+  /// DatifyConfig.addNewMonthsLocale(['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']);
   /// // The list of items was added to the config as follows:
   /// // 'january' to represent the first month,
   /// // 'february' to represent the second month,

@@ -35,11 +35,11 @@ enum DatePart {
 
   /// Returns the pattern corresponding to the specific date part.
   ///
-  RegExp get pattern => RegExp(_partsToFormats[this]!);
+  RegExp get pattern => _partPatterns[this]!;
 }
 
-const _partsToFormats = {
-  DatePart.day: DatifyConfig.dayFormat,
-  DatePart.month: DatifyConfig.monthDigitFormat,
-  DatePart.year: DatifyConfig.yearFormat
+final _partPatterns = {
+  DatePart.day: RegExp(DatifyConfig.dayFormat),
+  DatePart.month: RegExp(DatifyConfig.monthDigitFormat),
+  DatePart.year: RegExp(DatifyConfig.yearFormat),
 };
