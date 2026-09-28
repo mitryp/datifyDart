@@ -30,96 +30,37 @@ The behavior of Datify can be configured with DatifyConfig - see [Configuration]
 
 ## Example
 
-___
-See the `example/datify_example.dart` for the full example.
-
 ```dart
-String handleRequest(SearchRequest searchRequest) {
-  final dateQuery = searchRequest['date'];
-
-  // Datify handles all the parsing inside freeing
-  // you from even thinking about it!
-  final res = Datify
-      .parse(dateQuery)
-      .result;
-
-  // make the search request
-  final response =
-      Events.query(year: res.year, month: res.month, day: res.day) ?? 'No events found for this query 👀';
-
-  return response;
-}
+import 'package:datify/datify.dart';
 
 void main() {
-  // define dates in different formats
-  const dates = [
-    '31.12.2021',     // common digit-only date format
-    '2022-02-23',     // another commonly-used date format
-    '23-02/2022',     // the supported separators can be combined in the string
-    '20 of January',  // date is incomplete but still correctly parsed
-    'May',            // just a month name
-    '14 лютого 2022', // Ukrainian date which stands for 14.02.2022
-    'not a date',     // not a date at all
-  ];
+  final datify = Datify.parse('20th of January, 2021');
 
-  // 'request' all the dates
-  for (var date in dates) {
-    print('$date: ${handleRequest({'date': date})}');
-  }
-}
-
-/// Database emulation for the example.
-///
-/// This class stored dates and the corresponding event descriptions and provides the method for
-/// record requesting from the storage.
-///
-abstract class Events {
-  /// Stores the dates and the corresponding event descriptions.
-  ///
-  static const _records = {
-    Date(year: 2021, month: 12, day: 31): 'New Year party 🎄',
-    Date(year: 2022, month: 1, day: 20): 'Birthday celebration 🎁',
-    Date(year: 2022, month: 2, day: 14): 'St. Valentines Day 💖',
-    Date(year: 2022, month: 2, day: 23): 'The cinema attendance 📽',
-    Date(year: 2022, month: 5, day: 23): 'A long-awaited Moment 🔥',
-  };
-
-  /// Returns an event descriptions based on the provided date parts.
-  ///
-  /// If no date parts are provided or no corresponding event description is found, the method returns
-  /// null.
-  ///
-  static String? query({int? year, int? month, int? day}) {
-    // handle empty requests
-    if (year == null && month == null && day == null) {
-      return null;
-    }
-
-    // find the first event corresponding to the given date
-    final res = _records.entries
-        .firstWhere(
-            (record) =>
-            record.key.satisfies(year: year, month: month, day: day),
-        orElse: () => MapEntry(Date.empty(), ''))
-        .value;
-    return (res.isEmpty ? null : res);
-  }
+  print(datify.date); // 2021-01-20 00:00:00.000
+  print(datify.result); // DatifyResult{year: 2021, month: 1, day: 20}
 }
 ```
 
-The output of the example above:
+Datify handles the following inputs out of the box:
 
-```plaintext
-31.12.2021: New Year party 🎄
-2022-02-23: The cinema attendance 📽
-23-02/2022: The cinema attendance 📽
-20 of January: Birthday celebration 🎁
-May: A long-awaited Moment 🔥
-14 лютого 2022: St. Valentines Day 💖
-not a date: No events found for this query 👀
-```
+| Input                                   | Result                  |
+|-----------------------------------------|-------------------------|
+| `31.12.2021`                            | 2021-12-31              |
+| `2022-02-23T10:00:00Z`                  | 2022-02-23              |
+| `20th of January, 2021`                 | 2021-01-20              |
+| `Sept 5, 2020`                          | 2020-09-05              |
+| `14 лютого 2022`                        | 2022-02-14              |
+| `3 січ 26`                              | 2026-01-03              |
+| `12/31/2021`                            | 2021-12-31              |
+| `The meeting on 15 March 2022 at 10:30` | 2022-03-15              |
+| `20 of January`                         | month 1, day 20         |
+| `31.02.2021`                            | not an existing date    |
+| `Maybe tomorrow`                        | no date found           |
 
-_Uncritical code was omitted._
+With `DatifyConfig.dayFirst = false`, `05/06/2021` is read as May 6, and after adding French month names with
+`DatifyConfig.addNewMonthsLocale`, `14 juillet 2021` is parsed as 2021-07-14.
+
+See [`example/datify_example.dart`](example/datify_example.dart) for the code that produces this table.
 
 ---
 
