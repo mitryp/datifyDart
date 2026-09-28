@@ -3,6 +3,9 @@ import 'dart:math';
 import 'package:datify/datify.dart';
 import 'package:test/test.dart';
 
+// seeded to make failures of the random tests reproducible
+final _random = Random(20260928);
+
 void main() {
   // Test the Datify parsing on the defined digit dates with a different date splitters
   group('Digit dates test', () {
@@ -111,7 +114,7 @@ void main() {
     ];
 
     void testMonthsList(List<String> monthsList, String testName) {
-      final random = Random();
+      final random = _random;
       test(testName, () {
         for (var month = 0; month < monthsList.length; month++) {
           final separator = _randomElementOf(DatifyConfig.splitters);
@@ -133,6 +136,40 @@ void main() {
 
     // test the russian month forms
     testMonthsList(russian, 'russian months forms are defined correctly');
+
+    test('ukrainian and russian abbreviations are defined correctly', () {
+      const ukrainianAbbreviations = [
+        'січ',
+        'лют',
+        'бер',
+        'кві',
+        'тра',
+        'чер',
+        'лип',
+        'сер',
+        'вер',
+        'жов',
+        'лис',
+        'гру',
+      ];
+
+      for (var month = 0; month < ukrainianAbbreviations.length; month++) {
+        final abbreviation = ukrainianAbbreviations[month];
+        expect(
+          Datify.parse('3 $abbreviation 2026').date,
+          DateTime(2026, month + 1, 3),
+          reason: abbreviation,
+        );
+      }
+
+      expect(Datify.parse('3 січ. 2026').date, DateTime(2026, 1, 3));
+      expect(Datify.parse('3 янв 2026').date, DateTime(2026, 1, 3));
+      expect(Datify.parse('8 мар 2026').date, DateTime(2026, 3, 8));
+    });
+
+    test('two-letter abbreviations are not months', () {
+      expect(Datify.parse('3 сі 2026').month, null);
+    });
   });
 
   // Test the Datify parsing incomplete dates correctly
@@ -243,8 +280,11 @@ void main() {
         );
 
         final actualDateTime = d.date;
-        final expectedDateTime =
+        final dateTime =
             DateTime(expected.year!, expected.month!, expected.day!);
+        // random days such as November 31 do not exist
+        final expectedDateTime =
+            dateTime.month == expected.month ? dateTime : null;
         expect(
           actualDateTime,
           expectedDateTime,
@@ -258,6 +298,119 @@ void main() {
               'Result ${d.result}.date should be equal to $expectedDateTime',
         );
       }
+    });
+  });
+
+  group('Invalid dates tests', () {
+    const dates = ['31.02.2021', '30 2 2020', '29.02.2021', '31 April 2022'];
+
+    test('non-existent dates do not produce a DateTime', () {
+      for (final date in dates) {
+        final d = Datify.parse(date);
+
+        expect(d.isComplete, true, reason: '$date should be fully parsed');
+        expect(d.date, null, reason: '$date is not an existing date');
+        expect(d.result.date, null, reason: '$date is not an existing date');
+      }
+    });
+
+    test('leap days produce a DateTime', () {
+      expect(Datify.parse('29.02.2020').date, DateTime(2020, 2, 29));
+    });
+  });
+
+  group('Non-month words tests', () {
+    const strings = {
+      'Maybe tomorrow': [null, null, null],
+      'Mayday': [null, null, null],
+      'Junk 2020': [null, null, 2020],
+      'Decent 12 2020': [12, null, 2020],
+      'Juneteenth': [null, null, null],
+      'Marching band': [null, null, null],
+      'not a date': [null, null, null],
+    };
+
+    test('words starting with a month name are not months', () {
+      for (final entry in strings.entries) {
+        final d = Datify.parse(entry.key);
+        expect([d.day, d.month, d.year], entry.value, reason: entry.key);
+      }
+    });
+
+    test('abbreviations and punctuated month names are months', () {
+      const dates = {
+        'Sept 5, 2020': [5, 9, 2020],
+        '1 Febr. 2019': [1, 2, 2019],
+        '(March) 3 2021': [3, 3, 2021],
+        'Monday, 3 January 2022': [3, 1, 2022],
+      };
+
+      for (final entry in dates.entries) {
+        final d = Datify.parse(entry.key);
+        expect([d.day, d.month, d.year], entry.value, reason: entry.key);
+      }
+    });
+  });
+
+  group('ISO 8601 tests', () {
+    const dates = {
+      '2020-01-01T10:00:00Z': [2020, 1, 1],
+      '2021-12-31T23:59:59.999+02:00': [2021, 12, 31],
+      '20220704T120000': [2022, 7, 4],
+    };
+
+    test('timestamps are parsed as dates', () {
+      for (final entry in dates.entries) {
+        final d = Datify.parse(entry.key);
+        expect([d.year, d.month, d.day], entry.value, reason: entry.key);
+      }
+    });
+  });
+
+  group('Month-first dates tests', () {
+    test('unambiguous month-first dates are parsed with dayFirst', () {
+      const dates = {
+        '12/31/2021': [2021, 12, 31],
+        '2 29 2020': [2020, 2, 29],
+        '1.13.1999': [1999, 1, 13],
+      };
+
+      for (final entry in dates.entries) {
+        final d = Datify.parse(entry.key);
+        expect([d.year, d.month, d.day], entry.value, reason: entry.key);
+      }
+    });
+
+    test('ambiguous dates keep the dayFirst order', () {
+      final d = Datify.parse('05/06/2021');
+      expect([d.day, d.month], [5, 6]);
+    });
+
+    test('predefined days are not swapped', () {
+      final d = Datify.parse('12/31/2021', day: 5);
+      expect([d.year, d.month, d.day], [2021, 12, 5]);
+    });
+  });
+
+  group('Two-digit years tests', () {
+    const dates = {
+      '15.03.22': [2022, 3, 15],
+      '5 May 99': [1999, 5, 5],
+      '1/1/00': [2000, 1, 1],
+      '31 Dec 68.': [2068, 12, 31],
+      '1 Jan 69': [1969, 1, 1],
+    };
+
+    test('two-digit years are expanded', () {
+      for (final entry in dates.entries) {
+        final d = Datify.parse(entry.key);
+        expect([d.year, d.month, d.day], entry.value, reason: entry.key);
+      }
+    });
+
+    test('two-digit numbers are not years before the day and month', () {
+      expect(Datify.parse('15 March at 10:30').year, null);
+      expect(Datify.parse('10 2004').year, 2004);
     });
   });
 
@@ -291,6 +444,17 @@ void main() {
       );
     });
 
+    test('names added directly to the months list are recognized', () {
+      expect(Datify.parse('5 quintilis 2020').month, null);
+
+      DatifyConfig.months[6].add('quintilis');
+      expect(Datify.parse('5 quintilis 2020').month, 7);
+      expect(Datify.parse('5 quint 2020').month, 7);
+
+      DatifyConfig.months[6].remove('quintilis');
+      expect(Datify.parse('5 quintilis 2020').month, null);
+    });
+
     test('added months are defined correctly', () {
       const dates = {
         '20 septembre 2022': [20, 09, 2022],
@@ -309,7 +473,7 @@ void main() {
 String _randomSplitter() => _randomElementOf(DatifyConfig.splitters);
 
 Map<String, Datify> _randomDate({bool isAlphanumeric = false}) {
-  final random = Random();
+  final random = _random;
 
   // define a random date parts
   final day = random.nextIntInRange(1, 32);
@@ -334,16 +498,14 @@ Map<String, Datify> _randomDate({bool isAlphanumeric = false}) {
 }
 
 Map<int, String> randomAlphanumericMonth() {
-  final monthNum = Random().nextIntInRange(1, 13);
+  final monthNum = _random.nextIntInRange(1, 13);
   final monthNamesSet = DatifyConfig.months[monthNum - 1];
 
   return {monthNum: _randomElementOf(monthNamesSet)};
 }
 
-T _randomElementOf<T>(Iterable<T> collection) {
-  final random = Random();
-  return collection.elementAt(random.nextInt(collection.length));
-}
+T _randomElementOf<T>(Iterable<T> collection) =>
+    collection.elementAt(_random.nextInt(collection.length));
 
 extension _RadomRangeInt on Random {
   /// Returns a random number in the range between min (inclusive) and max (exclusive).

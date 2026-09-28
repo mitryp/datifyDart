@@ -1,13 +1,11 @@
-// todo clean the code
-import 'dart:core';
-
-import 'package:datify/src/parse/general_date_parsing.dart';
-import 'package:datify/src/util.dart';
-
 import 'config.dart';
 import 'date_part.dart';
+import 'parse/general_date_parsing.dart';
 import 'parse/month_name_parsing.dart';
 import 'result.dart';
+import 'util.dart';
+
+final _twoDigitYearPattern = RegExp(r'^(\d\d)[.,;:!?)]*$');
 
 /// The object that provides the implementation of the autonomous date parsing.
 /// This object may be used to parse a dates in any supported formats (see the [Datify.parse] documentation).
@@ -52,6 +50,9 @@ class Datify {
   /// The class supports the following formats:
   /// * digit only dates in the EU format (DD$MM$YYYY): 20.02.2020, 09 07 2000, 9-1-2005;
   /// * digit only dates in the US format (MM.DD.YYYY): 02/22/2020, 09.07.2000, 1 9 2005;
+  ///   when the day is greater than 12, the order is detected regardless of [DatifyConfig.dayFirst];
+  /// * two-digit years following the day and month: 15.03.22, 5 May 99;
+  ///   00–68 are read as 2000–2068 and 69–99 as 1969–1999;
   /// * digit and alphanumeric dates in the general date format (YYYY$?MM$?DD) with or without separators;
   /// * alphanumeric dates in different languages: 11th$of$July,$2020; 6$липня$2021, 31$декабря$2021.
   /// Whenever the sign `$` is encountered, that means that in its place may be any of the supported
@@ -103,6 +104,9 @@ class Datify {
   Datify.parse(String? string, {this.year, this.month, this.day}) {
     if (string == null) return;
 
+    final isDayPredefined = day != null;
+    int? twoDigitYearCandidate;
+
     final input = normalize(string);
 
     // try parse date in general format from the input
@@ -141,6 +145,20 @@ class Datify {
 
     // parse each date part
     for (final datePart in dateParts) {
+      if (!isDayPredefined &&
+          _trySwapDayAndMonth(datePart, remainingPartsOrder)) {
+        continue;
+      }
+
+      // a two-digit year is only used if no four-digit year follows
+      if (year == null && day != null && month != null) {
+        final twoDigitYear = _tryParseTwoDigitYear(datePart);
+        if (twoDigitYear != null) {
+          twoDigitYearCandidate ??= twoDigitYear;
+          continue;
+        }
+      }
+
       // test each date part on all the not-yet-defined fields
       for (final part in remainingPartsOrder) {
         final regexp = part.pattern;
@@ -181,6 +199,48 @@ class Datify {
         break;
       }
     }
+
+    year ??= twoDigitYearCandidate;
+  }
+
+  /// Handles month-first dates when [DatifyConfig.dayFirst] is true: in `12/31/2021`, `12` is
+  /// parsed as the day first, and since `31` cannot be a month, the two values are swapped.
+  ///
+  bool _trySwapDayAndMonth(String datePart, List<DatePart> remainingParts) {
+    final parsedDay = day;
+    if (!DatifyConfig.dayFirst ||
+        parsedDay == null ||
+        parsedDay > 12 ||
+        remainingParts.contains(DatePart.day) ||
+        !remainingParts.contains(DatePart.month)) {
+      return false;
+    }
+
+    final match = DatePart.day.pattern.stringMatch(datePart);
+    if (match == null) {
+      return false;
+    }
+
+    final value = int.parse(match);
+    if (value <= 12) {
+      return false;
+    }
+
+    month = parsedDay;
+    day = value;
+    remainingParts.remove(DatePart.month);
+    return true;
+  }
+
+  /// Returns the expanded year if [datePart] is a two-digit year.
+  ///
+  static int? _tryParseTwoDigitYear(String datePart) {
+    final match = _twoDigitYearPattern.firstMatch(datePart);
+    if (match == null) {
+      return null;
+    }
+
+    return expandTwoDigitYear(int.parse(match.group(1)!));
   }
 
   /// Sets the previously unset fields of this Datify object to the given values.
@@ -203,9 +263,10 @@ class Datify {
 
   /// Returns a [DateTime] object of the parsed date if the date is complete.
   ///
-  /// If any of the date parts are null, the method will return null instead.
+  /// If any of the date parts are null or they do not form an existing date (e.g. February 31),
+  /// the method will return null instead.
   ///
-  DateTime? get date => isComplete ? DateTime(year!, month!, day!) : null;
+  DateTime? get date => dateFromParts(year, month, day);
 
   /// Returns a [DatifyResult] object with the values of the [Datify.parse].
   ///

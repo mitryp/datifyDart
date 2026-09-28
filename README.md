@@ -12,8 +12,9 @@ The date formats supported by Datify are the following:
 
 * Day first digit-only dates: 20.02.2020, 09/07/2000, 9-1-2005;
 * Month first digit-only dates: 02 22 2020, 09.07.2000, 1.9/2005;
-* Dates in the general date format: 2020-04-15;
-* **Alphanumeric dates in different languages**: 11th of July 2020; 6 липня 2021; 31 декабря, 2021.
+* Dates in the general date format and ISO 8601 timestamps: 2020-04-15, 2020-04-15T10:00:00Z;
+* Two-digit years: 15.03.22, 5 May 99;
+* **Alphanumeric dates in different languages**: 11th of July 2020; Sept 5, 2020; 6 липня 2021; 31 декабря, 2021.
 
 See the [Formats](#Formats) section for the detailed information about the supported formats.
 
@@ -29,96 +30,37 @@ The behavior of Datify can be configured with DatifyConfig - see [Configuration]
 
 ## Example
 
-___
-See the `example/datify_example.dart` for the full example.
-
 ```dart
-String handleRequest(SearchRequest searchRequest) {
-  final dateQuery = searchRequest['date'];
-
-  // Datify handles all the parsing inside freeing
-  // you from even thinking about it!
-  final res = Datify
-      .parse(dateQuery)
-      .result;
-
-  // make the search request
-  final response =
-      Events.query(year: res.year, month: res.month, day: res.day) ?? 'No events found for this query 👀';
-
-  return response;
-}
+import 'package:datify/datify.dart';
 
 void main() {
-  // define dates in different formats
-  const dates = [
-    '31.12.2021',     // common digit-only date format
-    '2022-02-23',     // another commonly-used date format
-    '23-02/2022',     // the supported separators can be combined in the string
-    '20 of January',  // date is incomplete but still correctly parsed
-    'May',            // just a month name
-    '14 лютого 2022', // Ukrainian date which stands for 14.02.2022
-    'not a date',     // not a date at all
-  ];
+  final datify = Datify.parse('20th of January, 2021');
 
-  // 'request' all the dates
-  for (var date in dates) {
-    print('$date: ${handleRequest({'date': date})}');
-  }
-}
-
-/// Database emulation for the example.
-///
-/// This class stored dates and the corresponding event descriptions and provides the method for
-/// record requesting from the storage.
-///
-abstract class Events {
-  /// Stores the dates and the corresponding event descriptions.
-  ///
-  static const _records = {
-    Date(year: 2021, month: 12, day: 31): 'New Year party 🎄',
-    Date(year: 2022, month: 1, day: 20): 'Birthday celebration 🎁',
-    Date(year: 2022, month: 2, day: 14): 'St. Valentines Day 💖',
-    Date(year: 2022, month: 2, day: 23): 'The cinema attendance 📽',
-    Date(year: 2022, month: 5, day: 23): 'A long-awaited Moment 🔥',
-  };
-
-  /// Returns an event descriptions based on the provided date parts.
-  ///
-  /// If no date parts are provided or no corresponding event description is found, the method returns
-  /// null.
-  ///
-  static String? query({int? year, int? month, int? day}) {
-    // handle empty requests
-    if (year == null && month == null && day == null) {
-      return null;
-    }
-
-    // find the first event corresponding to the given date
-    final res = _records.entries
-        .firstWhere(
-            (record) =>
-            record.key.satisfies(year: year, month: month, day: day),
-        orElse: () => MapEntry(Date.empty(), ''))
-        .value;
-    return (res.isEmpty ? null : res);
-  }
+  print(datify.date); // 2021-01-20 00:00:00.000
+  print(datify.result); // DatifyResult{year: 2021, month: 1, day: 20}
 }
 ```
 
-The output of the example above:
+Datify handles the following inputs out of the box:
 
-```plaintext
-31.12.2021: New Year party 🎄
-2022-02-23: The cinema attendance 📽
-23-02/2022: The cinema attendance 📽
-20 of January: Birthday celebration 🎁
-May: A long-awaited Moment 🔥
-14 лютого 2022: St. Valentines Day 💖
-not a date: No events found for this query 👀
-```
+| Input                                   | Result                  |
+|-----------------------------------------|-------------------------|
+| `31.12.2021`                            | 2021-12-31              |
+| `2022-02-23T10:00:00Z`                  | 2022-02-23              |
+| `20th of January, 2021`                 | 2021-01-20              |
+| `Sept 5, 2020`                          | 2020-09-05              |
+| `14 лютого 2022`                        | 2022-02-14              |
+| `3 січ 26`                              | 2026-01-03              |
+| `12/31/2021`                            | 2021-12-31              |
+| `The meeting on 15 March 2022 at 10:30` | 2022-03-15              |
+| `20 of January`                         | month 1, day 20         |
+| `31.02.2021`                            | not an existing date    |
+| `Maybe tomorrow`                        | no date found           |
 
-_Uncritical code was omitted._
+With `DatifyConfig.dayFirst = false`, `05/06/2021` is read as May 6, and after adding French month names with
+`DatifyConfig.addNewMonthsLocale`, `14 juillet 2021` is parsed as 2021-07-14.
+
+See [`example/datify_example.dart`](https://github.com/mitryp/datifyDart/blob/master/example/datify_example.dart) for the code that produces this table.
 
 ---
 
@@ -140,7 +82,7 @@ After the parsing is done, the result can be retrieved in a different ways:
 
 * If the date is complete, the result can be transformed into a `DateTime` object with the `DateTime? date` getter.
 
-  However, if the date is incomplete, the `date` getter will return null.
+  However, if the date is incomplete or does not exist (e.g. `31.02.2021`), the `date` getter will return null.
 
   The result is considered complete when the `year`, `month`, and `day` fields of the result are not null.
 
@@ -165,11 +107,13 @@ After the parsing is done, the result can be retrieved in a different ways:
 >
 > The `$?` sign represents an optional separator character (the separator may or may not be present).
 
-- General date format: `YYYY$?MM$?DD` - e.g. _20210706_ or _2022-02-23_ etc;
+- General date format: `YYYY$?MM$?DD` - e.g. _20210706_ or _2022-02-23_ etc. The date may be followed by a time, as in
+  ISO 8601 timestamps: _2022-02-23T10:00:00Z_;
 
 - `Alphanumeric dates in different languages` - e.g. _6th of July 2021_, _31st of December 2021_, _20 жовтня_, _1 июля_
   etc;
-  > Datify tries to find different forms of month names in the natural languages where they are present.
+  > Month names are matched exactly, as abbreviations (_Sept_), or as forms that differ only in a short ending
+  (_январ**я**_). Words that merely start like a month name, such as _Maybe_ or _Junk_, are not treated as months.
 
 When the `dayFirst` is set to `true`:
 
@@ -178,6 +122,12 @@ When the `dayFirst` is set to `true`:
 When the `dayFirst` is set to `false`:
 
 - American digit date format (the month is first): `MM$DD$YYYY` - e.g. _12.31.2021_;
+
+Regardless of `dayFirst`, a date is read in the other order when the day would otherwise be out of range, e.g. _12.31.2021_
+is parsed as December 31 even when `dayFirst` is `true`.
+
+A two-digit year is accepted after the day and month (_15.03.22_) when no four-digit year is present: _00–68_ are
+read as _2000–2068_, and _69–99_ as _1969–1999_.
 
 > When the `dayFirst` is set to `false`, Datify will try to find the alphabetic month names before the parsing to avoid
 losing the month values in the strings of the format '1 of July 2020'. However, this makes the parsing a bit slower with
@@ -237,6 +187,8 @@ The following can be customized:
   
   DatifyConfig.addNewMonthsLocale(frenchMonths);
   ```
+  > If the language inflects month names, add the inflected forms with `addNewMonthName` as well: forms with a stem
+  shorter than 4 letters or an ending longer than 2 letters are not recognized automatically.
   > Note: The months should be ordered in the months order for the correct work.
 
 ### Motivation

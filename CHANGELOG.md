@@ -1,12 +1,42 @@
-# 1.1.6
+## 1.2.0
+
+- Fixed non-existent dates (e.g. `31.02.2021`) being rolled over to the next month by the `date`
+  getters; they now return `null`.
+- Fixed words that merely start like a month name (`Maybe`, `Junk`, `Decent`) being parsed as
+  months. Month names are now matched exactly, as abbreviations (`Sept`), or as forms that differ
+  only in a short ending. Surrounding punctuation is ignored.
+- Added the Ukrainian and Russian genitive month forms (`січня`, `января`, ...) to the defaults.
+  Inflected forms of custom locales with a short stem may need to be added with
+  `DatifyConfig.addNewMonthName`.
+- Added support for ISO 8601 timestamps, e.g. `2020-01-01T10:00:00Z`.
+- Month-first dates such as `12/31/2021` are now detected when `dayFirst` is `true` and the day is
+  greater than 12.
+- Added support for two-digit years after the day and month, e.g. `15.03.22`: 00–68 are read as
+  2000–2068, and 69–99 as 1969–1999.
+- Improved parsing performance by caching regular expressions and indexing month names in a lookup
+  table and a prefix tree.
+  Median time per `Datify.parse` call (AOT-compiled, Dart 3.13, Apple M2 Pro):
+
+  | Input                                    | 1.1.6    | 1.2.0   | Speedup |
+  |------------------------------------------|----------|---------|---------|
+  | Digits (`31.12.2021`)                    | 3.1 µs   | 1.8 µs  | 1.7×    |
+  | General format (`2022-02-23`)            | 2.3 µs   | 1.1 µs  | 2.1×    |
+  | English month names (`11 July 2020`)     | 17.6 µs  | 3.1 µs  | 5.7×    |
+  | Ukrainian/Russian names (`6 липня 2021`) | 14.8 µs  | 4.8 µs  | 3.1×    |
+  | Not a date (`hello world`)               | 100.1 µs | 5.1 µs  | 19.6×   |
+  | Digits, `dayFirst: false` (`12.31.2021`) | 3.5 µs   | 2.1 µs  | 1.7×    |
+- Raised the minimum Dart SDK version to 3.0.0.
+- Replaced the example with a shorter one showing the supported inputs.
+
+## 1.1.6
 
 - Fixed Pub static analysis warnings about angle brackets being interpreted as HTML.
 
-# 1.1.5
+## 1.1.5
 
 - Fixed a link in the README.
 
-# 1.1.4
+## 1.1.4
 
 - Fixed typos and grammar mistakes in the README.md.
 - Updated package description.

@@ -1,3 +1,5 @@
+import 'util.dart';
+
 /// The class used to represent the result of Datify parsing.
 ///
 /// The result is not nullable, but any of the values in the result can be null depending on the
@@ -11,7 +13,6 @@
 /// The result can be transformed into a Map\<String, int?\> with the [toMap] method.
 ///
 class DatifyResult {
-  // TODO: decide if we need it or not
   /// The year of the result.
   /// May be null if the Datify could not parse the respective date part.
   ///
@@ -54,9 +55,10 @@ class DatifyResult {
   /// Returns the [DateTime] object with the values of the result.
   /// This works if all the values of the result are not null.
   ///
-  /// If the result is incomplete, this getter will return null instead.
+  /// If the result is incomplete or does not form an existing date (e.g. February 31), this getter
+  /// will return null instead.
   ///
-  DateTime? get date => (isComplete ? DateTime(year!, month!, day!) : null);
+  DateTime? get date => dateFromParts(year, month, day);
 
   @override
   String toString() => 'DatifyResult{year: $year, month: $month, day: $day}';
