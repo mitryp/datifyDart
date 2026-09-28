@@ -60,7 +60,7 @@ Datify handles the following inputs out of the box:
 With `DatifyConfig.dayFirst = false`, `05/06/2021` is read as May 6, and after adding French month names with
 `DatifyConfig.addNewMonthsLocale`, `14 juillet 2021` is parsed as 2021-07-14.
 
-See [`example/datify_example.dart`](example/datify_example.dart) for the code that produces this table.
+See [`example/datify_example.dart`](https://github.com/mitryp/datifyDart/blob/master/example/datify_example.dart) for the code that produces this table.
 
 ---
 
