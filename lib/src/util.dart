@@ -1,7 +1,3 @@
-/// Trims and lowercase the given string.
-///
-String normalize(String str) => str.trim().toLowerCase();
-
 /// Returns a [DateTime] of the given parts, or null if any part is missing or the parts do not form
 /// an existing date (e.g. February 31).
 ///

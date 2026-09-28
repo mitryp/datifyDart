@@ -26,6 +26,12 @@ const _cases = {
     '31 декабря 2021',
   ],
   'Not a date': ['not a date', 'hello world', 'foo bar baz', 'nothing here'],
+  'Date in a sentence': [
+    'Room 12, meeting on 5 May 2020',
+    'Order #15 shipped 03.04.2021',
+    'The invoice from 2021-03-15 is overdue',
+    'Due by January 20th, 2022 at noon',
+  ],
 };
 
 const _monthFirstCase = [
@@ -39,16 +45,16 @@ const _warmup = 20000;
 const _iterations = 200000;
 const _rounds = 7;
 
-double _medianMicrosPerParse(List<String> inputs) {
+double _medianMicrosPerParse(Datify datify, List<String> inputs) {
   for (var i = 0; i < _warmup; i++) {
-    Datify.parse(inputs[i % inputs.length]);
+    datify.parse(inputs[i % inputs.length]);
   }
 
   final times = <double>[];
   for (var round = 0; round < _rounds; round++) {
     final stopwatch = Stopwatch()..start();
     for (var i = 0; i < _iterations; i++) {
-      Datify.parse(inputs[i % inputs.length]);
+      datify.parse(inputs[i % inputs.length]);
     }
     times.add(stopwatch.elapsedMicroseconds / _iterations);
   }
@@ -57,8 +63,9 @@ double _medianMicrosPerParse(List<String> inputs) {
   return times[_rounds ~/ 2];
 }
 
-void _report(String name, List<String> inputs) {
-  final micros = _medianMicrosPerParse(inputs).toStringAsFixed(2);
+void _report(String name, List<String> inputs,
+    [Datify datify = const Datify()]) {
+  final micros = _medianMicrosPerParse(datify, inputs).toStringAsFixed(2);
   print('${name.padRight(26)} $micros µs');
 }
 
@@ -67,6 +74,6 @@ void main() {
     _report(entry.key, entry.value);
   }
 
-  DatifyConfig.dayFirst = false;
-  _report('Digits, dayFirst: false', _monthFirstCase);
+  _report('Digits, dayFirst: false', _monthFirstCase,
+      const Datify(DatifyConfig(dayFirst: false)));
 }

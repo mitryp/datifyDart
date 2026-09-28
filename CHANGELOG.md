@@ -1,3 +1,49 @@
+## 2.0.0
+
+A new parser that recognizes the shapes of dates instead of picking date parts from anywhere in the text, and an
+immutable configuration. See the "Migrating from 1.x" section of the README.
+
+**Breaking changes**
+
+- `Datify` is now a parser configured with an immutable `DatifyConfig`: `const Datify().parse(text)`. The static
+  `DatifyConfig` settings and methods are removed.
+- `Datify.parse` returns a `DatifyResult?`, which is null when the text has no date. The `Datify` fields and the
+  `Datify.fromValues` and `Datify.empty` constructors are removed, as are the predefined values of `Datify.parse`
+  and `DatifyResult.toMap`.
+- Dates are only recognized in the supported formats, so numbers and month names around them are no longer taken for
+  date parts: `Room 12, meeting on 5 May 2020` is May 5, and `12 2020 march` has no date. The 1.x behavior is
+  available with `DatifyConfig(lenient: true)`, which is used when no date is recognized.
+- A month name or a year alone, as in `May` or `Junk 2020`, is no longer a date. A month name needs a day or a year
+  next to it: `May 5`, `May 2021`.
+- Month names are configured as `DatifyLocale`s, replacing `DatifyConfig.months`, `addNewMonthName`, and
+  `addNewMonthsLocale`.
+- `DatifyConfig.splitters` is renamed to `separators`, and takes single characters that are not letters, digits, or
+  whitespace; other separators throw an `ArgumentError`. Whitespace always separates date parts.
+
+**New features**
+
+- `DatifyResult.start` and `end` give the position of the date in the text.
+- `DatifyResult.isAmbiguous` tells when the day and month could be read in the other order, as in `05/06/2021`.
+- `Datify.parseAll` finds every date in the text.
+- Added German, French, Spanish, and Polish month names, and the `2021-Mar-05` format.
+- Locales can choose which languages are recognized, and define ordinal suffixes (`20th`) and connecting words
+  (`20 of May`, `5 de mayo`).
+
+**Performance**
+
+The text is now read in a single pass by a hand-written lexer. Median time per `Datify.parse` call (AOT-compiled,
+Dart 3.13, Apple M2 Pro), with 7 languages instead of 3:
+
+| Input                                            | 1.2.0  | 2.0.0   | Speedup |
+|--------------------------------------------------|--------|---------|---------|
+| Digits (`31.12.2021`)                            | 1.8 µs | 0.24 µs | 7.4×    |
+| General format (`2022-02-23`)                    | 1.1 µs | 0.22 µs | 4.8×    |
+| English month names (`11 July 2020`)             | 3.0 µs | 0.33 µs | 9.2×    |
+| Ukrainian/Russian names (`6 липня 2021`)         | 4.8 µs | 0.47 µs | 10.2×   |
+| Not a date (`hello world`)                       | 5.1 µs | 0.26 µs | 19.5×   |
+| Digits, `dayFirst: false` (`12.31.2021`)         | 2.1 µs | 0.25 µs | 8.4×    |
+| Date in a sentence (`Room 12, meeting on 5 May`) | —      | 0.65 µs |         |
+
 ## 1.2.0
 
 - Fixed non-existent dates (e.g. `31.02.2021`) being rolled over to the next month by the `date`

@@ -2,31 +2,21 @@
 [![pub package](https://img.shields.io/pub/v/datify.svg)](https://pub.dev/packages/datify)
 [![package publisher](https://img.shields.io/pub/publisher/datify.svg)](https://pub.dev/packages/datify/publisher)
 
-## Flexible automatic date extracting from strings in any formats.
+## Find dates in text, in _(nearly)_ any format.
 
-**Datify** makes it easy to extract dates from strings in _(nearly)_ any formats.
+**Datify** makes it easy to find dates in strings: digit-only dates in either day-month order, ISO 8601 timestamps,
+and dates with month names in 7 languages.
 
-You will need only to parse the date string with Datify, and it's all good.
-
-The date formats supported by Datify are the following:
-
-* Day first digit-only dates: 20.02.2020, 09/07/2000, 9-1-2005;
-* Month first digit-only dates: 02 22 2020, 09.07.2000, 1.9/2005;
-* Dates in the general date format and ISO 8601 timestamps: 2020-04-15, 2020-04-15T10:00:00Z;
-* Two-digit years: 15.03.22, 5 May 99;
-* **Alphanumeric dates in different languages**: 11th of July 2020; Sept 5, 2020; 6 липня 2021; 31 декабря, 2021.
-
-See the [Formats](#Formats) section for the detailed information about the supported formats.
-
-The behavior of Datify can be configured with DatifyConfig - see [Configuration](#Configuring-Datify) section.
-
-### Month name languages supported by default:
-
-- [x] English
-- [x] Ukrainian
-- [x] Russian
+You only need to pass the text to Datify, and it's all good: it will tell you the date, where it is in the text, and
+whether its day and month could be read the other way around.
 
 [Documentation link](https://pub.dev/documentation/datify/latest/)
+
+## Installation
+
+```shell
+dart pub add datify
+```
 
 ## Example
 
@@ -34,169 +24,181 @@ The behavior of Datify can be configured with DatifyConfig - see [Configuration]
 import 'package:datify/datify.dart';
 
 void main() {
-  final datify = Datify.parse('20th of January, 2021');
+  const datify = Datify();
 
-  print(datify.date); // 2021-01-20 00:00:00.000
-  print(datify.result); // DatifyResult{year: 2021, month: 1, day: 20}
+  final result = datify.parse('Room 12, meeting on 20th of January, 2021')!;
+  print(result.date); // 2021-01-20 00:00:00.000
+  print(result.start); // 20
+
+  print(datify.parseAll('from 1.02.2021 to 2021-03-15').length); // 2
 }
 ```
 
 Datify handles the following inputs out of the box:
 
-| Input                                   | Result                  |
-|-----------------------------------------|-------------------------|
-| `31.12.2021`                            | 2021-12-31              |
-| `2022-02-23T10:00:00Z`                  | 2022-02-23              |
-| `20th of January, 2021`                 | 2021-01-20              |
-| `Sept 5, 2020`                          | 2020-09-05              |
-| `14 лютого 2022`                        | 2022-02-14              |
-| `3 січ 26`                              | 2026-01-03              |
-| `12/31/2021`                            | 2021-12-31              |
-| `The meeting on 15 March 2022 at 10:30` | 2022-03-15              |
-| `20 of January`                         | month 1, day 20         |
-| `31.02.2021`                            | not an existing date    |
-| `Maybe tomorrow`                        | no date found           |
+| Input                                        | Result                 |
+|----------------------------------------------|------------------------|
+| `31.12.2021`                                 | 2021-12-31             |
+| `2022-02-23T10:00:00Z`                       | 2022-02-23             |
+| `20th of January, 2021`                      | 2021-01-20             |
+| `Sept 5, 2020`                               | 2020-09-05             |
+| `14 лютого 2022`                             | 2022-02-14             |
+| `3 січ 26`                                   | 2026-01-03             |
+| `5. Mai 2020`                                | 2020-05-05             |
+| `12/31/2021`                                 | 2021-12-31             |
+| `05/06/2021`                                 | 2021-06-05 (ambiguous) |
+| `Room 12, meeting on 15 March 2022 at 10:30` | 2022-03-15             |
+| `January 2021`                               | year 2021, month 1     |
+| `31.02.2021`                                 | not an existing date   |
+| `Maybe tomorrow`                             | no date found          |
 
-With `DatifyConfig.dayFirst = false`, `05/06/2021` is read as May 6, and after adding French month names with
-`DatifyConfig.addNewMonthsLocale`, `14 juillet 2021` is parsed as 2021-07-14.
-
-See [`example/datify_example.dart`](https://github.com/mitryp/datifyDart/blob/master/example/datify_example.dart) for the code that produces this table.
+See [`example/datify_example.dart`](https://github.com/mitryp/datifyDart/blob/master/example/datify_example.dart) for
+the code that produces this table.
 
 ---
 
-## Data parsing
+## Parsing
 
-To extract a date from a string, use the `.parse` constructor of the `Datify` class.
-The constructor takes a nullable input string and optional parameters `year`, `month`, and `day`.
+To find a date in a string, create a `Datify` parser and call one of its methods:
 
-After that the input string will be parsed. If the optional parameters were given, the respective object fields will
-have the provided values.
+* `parse(text)` returns the first date in the text as a `DatifyResult`, or `null` if there is none;
+* `parseAll(text)` returns all dates in the text, in the order they appear.
 
-Datify class has the `.fromValues` constructor that takes only optional parameters `year`, `month`, and `day` to create
-the instance of the class without parsing, and `.empty` constructor that will create a Datify object with all the values
-set to null.
+```dart
+const datify = Datify();
+
+const text = 'Booked on 2021-03-01 for 14 May 2021';
+for (final result in datify.parseAll(text)) {
+  print(text.substring(result.start, result.end)); // 2021-03-01, then 14 May 2021
+}
+```
 
 ### Getting the result
 
-After the parsing is done, the result can be retrieved in a different ways:
+A `DatifyResult` has the following fields:
 
-* If the date is complete, the result can be transformed into a `DateTime` object with the `DateTime? date` getter.
+| Field                  | Description                                                                                   |
+|------------------------|-----------------------------------------------------------------------------------------------|
+| `year`, `month`, `day` | The date parts. Any of them may be null for partial dates, such as `January 2021`.            |
+| `isComplete`           | Whether the year, month, and day were all found.                                              |
+| `date`                 | The result as a `DateTime`, or null if it is incomplete or doesn't exist (e.g. `31.02.2021`). |
+| `start`, `end`         | The position of the date in the text.                                                         |
+| `isAmbiguous`          | Whether the day and month could be read in the other order, as in `05/06/2021`.               |
 
-  However, if the date is incomplete or does not exist (e.g. `31.02.2021`), the `date` getter will return null.
+So, to use a date that may be partial, read its parts:
 
-  The result is considered complete when the `year`, `month`, and `day` fields of the result are not null.
-
-  To make sure the parsed result is complete and can be transformed to a DateTime, the `bool isComplete` getter is used.
-
-
-* To get a non-nullable result independent of the parsing result, use the `DatifyResult result` getter.
-
-  It will return a `DatifyResult` object which is not nullable by itself, but its fields may be null.
-
-  The `DatifyResult` object has the nullable `year`, `month`, and `day` final fields, the `isComplete` and `date` getters
-  that work just as the respective getters of the Datify instances. Moreover, the DatifyResult object can be transformed
-  to a `Map<String, int?>` with the predefined structure. See the DatifyResult description for more details.
-
-
-* The Datify instance itself has the mutable nullable fields `year`, `month`, and `day`, which can be used to access
-  the parsing result.
+```dart
+final result = datify.parse('Invoice for January 2021');
+print(result?.isComplete); // false
+print(result?.date); // null
+print('${result?.year}, ${result?.month}'); // 2021, 1
+```
 
 ## Formats
 
-> In the formats below, the sign `$` represents any of the supported date splitters.
->
-> The `$?` sign represents an optional separator character (the separator may or may not be present).
+> In the formats below, `$` stands for whitespace or any of the separators (`.`, `/`, `-` by default).
+> The separators can be combined in one date, e.g. _23-02/2022_.
 
-- General date format: `YYYY$?MM$?DD` - e.g. _20210706_ or _2022-02-23_ etc. The date may be followed by a time, as in
-  ISO 8601 timestamps: _2022-02-23T10:00:00Z_;
+* Digit-only dates: `DD$MM$YYYY` or `MM$DD$YYYY` - e.g. _31.12.2021_, _12/31/2021_, _31 12 2021_;
+* Year-first dates: `YYYY$MM$DD` or `YYYYMMDD` - e.g. _2021-12-31_, _20211231_, and ISO 8601 timestamps such as
+  _2021-12-31T10:00:00Z_;
+* **Dates with month names in different languages** - e.g. _20th of January, 2021_, _Jan 20, 2021_, _2021-Jan-20_,
+  _14 лютого 2022_, _5 de mayo de 2020_;
+* Partial dates with month names - e.g. _January 2021_, _20 of January_, _Jan 20_;
+* Two-digit years - e.g. _15.03.22_, _5 May 99_. The years `00–68` are read as `2000–2068`, and `69–99` as
+  `1969–1999`.
 
-- `Alphanumeric dates in different languages` - e.g. _6th of July 2021_, _31st of December 2021_, _20 жовтня_, _1 июля_
-  etc;
-  > Month names are matched exactly, as abbreviations (_Sept_), or as forms that differ only in a short ending
-  (_январ**я**_). Words that merely start like a month name, such as _Maybe_ or _Junk_, are not treated as months.
+A digit-only date is read in the order set by `dayFirst`, unless one of its numbers is greater than 12: `12/31/2021`
+is always December 31.
 
-When the `dayFirst` is set to `true`:
+> Month names are matched exactly, as abbreviations (_Sept_), or as forms that differ only in a short ending
+> (_марте_ for _март_). Words that merely start like a month name, such as _Maybe_ or _Junk_, are not months.
 
-- The most common digit-only date format: `DD$MM$YYYY` - e.g. _20.01.2022_;
+### Month name languages supported by default:
 
-When the `dayFirst` is set to `false`:
-
-- American digit date format (the month is first): `MM$DD$YYYY` - e.g. _12.31.2021_;
-
-Regardless of `dayFirst`, a date is read in the other order when the day would otherwise be out of range, e.g. _12.31.2021_
-is parsed as December 31 even when `dayFirst` is `true`.
-
-A two-digit year is accepted after the day and month (_15.03.22_) when no four-digit year is present: _00–68_ are
-read as _2000–2068_, and _69–99_ as _1969–1999_.
-
-> When the `dayFirst` is set to `false`, Datify will try to find the alphabetic month names before the parsing to avoid
-losing the month values in the strings of the format '1 of July 2020'. However, this makes the parsing a bit slower with
-this option enabled.
+- [x] English
+- [x] Ukrainian
+- [x] Russian
+- [x] German
+- [x] French
+- [x] Spanish
+- [x] Polish
 
 ## Configuring Datify
 
-The library behavior can be customized with the `DatifyConfig` class fields and methods.
+The behavior of a `Datify` parser is set with an immutable `DatifyConfig`:
 
-The following can be customized:
+```dart
+const datify = Datify(DatifyConfig(
+  dayFirst: false, // read 05/06/2021 as May 6
+  separators: {'/', '.', '-', '#'}, // besides whitespace
+  locales: [DatifyLocale.en, DatifyLocale.de],
+  lenient: true,
+));
+```
 
-1. Date splitters (`.`, `/`, `-`, ` ` by default).
+| Option       | Default                | Description                                                      |
+|--------------|------------------------|------------------------------------------------------------------|
+| `dayFirst`   | `true`                 | Whether the day comes first in ambiguous digit-only dates.       |
+| `separators` | `{'/', '.', '-'}`      | Single characters that separate the numbers of a date.           |
+| `locales`    | `DatifyLocale.builtIn` | The languages of month names.                                    |
+| `lenient`    | `false`                | See [Lenient parsing](#lenient-parsing).                         |
 
-   Any of the supported splitters can be present in digit-only or alphanumeric dates (See [Formats](#formats) section
-   of the documentation).
+> Create the parser once and reuse it: the month names of its locales are indexed on the first parse.
 
-   To define a new custom separator, it must be added to the `DatifyConfig.splitters` set.
+### Adding a language
 
-   For instance, to add the `#` separator to the config, the following syntax is used:
-   ```dart
-   DatifyConfig.splitters.add('#');
-   ```
-   After that the next `Datify.parse()` invocations will use the added splitter in the parsing operations.
-   > Splitters can also be string more than one character long
+To add a new language, define a `DatifyLocale` with the names of its 12 months, and pass it along with the built-in
+ones:
 
+```dart
+const italian = DatifyLocale(
+  months: [
+    ['gennaio'], ['febbraio'], ['marzo'], ['aprile'],
+    ['maggio'], ['giugno'], ['luglio'], ['agosto'],
+    ['settembre'], ['ottobre'], ['novembre'], ['dicembre'],
+  ],
+  connectors: ['di'], // as in "14 di luglio"
+);
 
-2. Month names localization, different month aliases.
-   By default, Datify supports English, English shortened, Ukrainian and Russian month names:
-   `{'january','jan','січень','январь',}`
+const datify = Datify(DatifyConfig(locales: [...DatifyLocale.builtIn, italian]));
+```
 
-   More localizations can be added whenever they needed with `DatifyConfig`:
+Each month takes a list of names, starting with January. Abbreviations don't need to be listed, but inflected forms
+do if their stem is shorter than 4 letters or their ending is longer than 2 letters (like the Ukrainian _січня_ for
+_січень_).
 
+A locale can also define `ordinalSuffixes`, like _th_ in _20th_, and `connectors`, like _of_ in _20th of January_.
 
-* To add a new month name for the specific month, the `DatifyConfig.addNewMonthName(int ordinal, String name)` method
-  is used. The `ordinal` argument takes int number in range [1, 12] inclusive to represent the month number.
+### Lenient parsing
 
-  For example, to add the French name, `Septembre`, for the 9th month, the following syntax is used:
-  ```dart
-  DatifyConfig.addNewMonthName(9, 'Septembre');
-  ```
-  _If the `ordinal` is not in the defined range, the StateError will be thrown._
+By default, Datify only recognizes the [formats](#formats) above, so _12 2020 march_ or _Decent 12 2020_ return
+`null`.
 
+With `lenient: true`, when no such date is found, Datify picks any numbers and month names that fit a date part, just
+as Datify 1.x did: _12 2020 march_ becomes March 12, 2020. This finds dates in more unusual orders, but may also take
+unrelated numbers for date parts. In this case, `parseAll` returns the picked date parts as a single result.
 
-* To add an entire new localization, which consists of 12 ordered month names, the
-  `DatifyConfig.addNewMonthsLocale(Iterable<String> monthNames)` method is used.
+## Migrating from 1.x
 
-  > The `monthNames` iterable must have the length of 12 and consist of the unique elements
-  If these conditions are not satisfied, the ArgumentError will be thrown.
+| 1.x                                              | 2.0                                                     |
+|--------------------------------------------------|---------------------------------------------------------|
+| `Datify.parse(text).date`                        | `const Datify().parse(text)?.date`                      |
+| `Datify.parse(text).result`                      | `const Datify().parse(text)`                            |
+| `DatifyConfig.dayFirst = false`                  | `Datify(DatifyConfig(dayFirst: false))`                 |
+| `DatifyConfig.splitters.add('#')`                | `DatifyConfig(separators: {'/', '.', '-', '#'})`        |
+| `DatifyConfig.addNewMonthsLocale([...])`         | `DatifyConfig(locales: [...DatifyLocale.builtIn, ...])` |
+| `Datify.parse(text, year: 2021)`                 | `result?.year ?? 2021`                                  |
+| `DatifyResult.toMap()`                           | `{'year': result.year, ...}`                            |
+| Date parts picked from anywhere in the text      | `DatifyConfig(lenient: true)`                           |
 
-  For example, to add the French month localization, the following syntax is used:
-  ```dart
-  const frenchMonths = [
-     'Janvier', 'Février', 'Mars', 'Avril', 'Peut', 'Juin',
-     'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 
-     'Décembre'
-   ];
-  
-  DatifyConfig.addNewMonthsLocale(frenchMonths);
-  ```
-  > If the language inflects month names, add the inflected forms with `addNewMonthName` as well: forms with a stem
-  shorter than 4 letters or an ending longer than 2 letters are not recognized automatically.
-  > Note: The months should be ordered in the months order for the correct work.
+## Motivation
 
-### Motivation
-Datify was originally developed in Python in the summer of 2021, when I
-was working on my first pet project which needed to support user input of dates in various formats.
+Datify was originally developed in Python in the summer of 2021, when I was working on my first pet project, which
+needed to support user input of dates in various formats.
 
 It was fascinating to write, and I decided to maintain the library.
 
-In Dart implementation, there are several major logic and performance improvements;
+In the Dart implementation, there are several major logic and performance improvements.
 
-Also, the regular expressions used in Python were replaced with the new ones, which work more predictable.
+Also, the regular expressions used in Python were replaced with new ones, which work more predictably.

@@ -1,9 +1,8 @@
 import 'dart:math';
 
-import '../config.dart';
-import '../util.dart';
+import 'locale.dart';
 
-final _nonLetterPattern = RegExp(r'[^\p{L}]', unicode: true);
+final _nonLetterPattern = RegExp(r'[^\p{L}\p{M}]', unicode: true);
 final _digitPattern = RegExp(r'\d');
 
 /// The minimum length of an abbreviation matched against a month name, e.g. `sept`.
@@ -17,6 +16,13 @@ const _maxEndingLength = 2;
 
 /// Greater than any month ordinal; marks the absence of a match.
 const _noMonth = 13;
+
+final _vocabularies = Expando<Vocabulary>();
+
+/// Lowercases [word] and removes the characters that are not letters.
+///
+String normalizeWord(String word) =>
+    word.toLowerCase().replaceAll(_nonLetterPattern, '');
 
 /// A prefix tree node of the month names.
 ///
@@ -41,28 +47,62 @@ class _MonthTrieNode {
   }
 }
 
-/// The month names indexed for lookup.
+/// The words of a list of locales, indexed for lookup.
 ///
-class _MonthIndex {
-  final exact = <String, int>{};
-  final trie = _MonthTrieNode();
+class Vocabulary {
+  final _exactMonths = <String, int>{};
+  final _trie = _MonthTrieNode();
+  final ordinalSuffixes = <String>{};
+  final connectors = <String>{};
 
-  _MonthIndex(List<Set<String>> months) {
-    for (var ordinal = 1; ordinal <= months.length; ordinal++) {
-      for (final name in months[ordinal - 1]) {
-        exact.putIfAbsent(name, () => ordinal);
-        _addToTrie(name, ordinal);
+  /// Returns the vocabulary of [locales], which is built once per list.
+  ///
+  factory Vocabulary.of(List<DatifyLocale> locales) =>
+      _vocabularies[locales] ??= Vocabulary._(locales);
+
+  Vocabulary._(List<DatifyLocale> locales) {
+    for (final locale in locales) {
+      if (locale.months.length != 12) {
+        throw ArgumentError.value(locale.months.length, 'months',
+            'A locale must have the names of 12 months');
       }
+
+      for (var ordinal = 1; ordinal <= 12; ordinal++) {
+        for (final name in locale.months[ordinal - 1].map(normalizeWord)) {
+          _exactMonths.putIfAbsent(name, () => ordinal);
+          _addToTrie(name, ordinal);
+        }
+      }
+
+      ordinalSuffixes.addAll(locale.ordinalSuffixes.map(normalizeWord));
+      connectors.addAll(locale.connectors.map(normalizeWord));
     }
   }
 
   void _addToTrie(String name, int month) {
-    var node = trie..add(month, name.length);
+    var node = _trie..add(month, name.length);
     for (var depth = 0; depth < name.length; depth++) {
       node = node.children
           .putIfAbsent(name.codeUnitAt(depth), _MonthTrieNode.new)
         ..add(month, name.length - depth - 1);
     }
+  }
+
+  /// Returns the month of a lowercase [word] of letters, or null if it is not a month name.
+  ///
+  int? monthOfWord(String word) => _exactMonths[word] ?? _findSimilar(word);
+
+  /// Returns the month named in [text], ignoring the characters around the name that are not
+  /// letters, such as in `(March)`.
+  ///
+  int? monthOfText(String text) {
+    // an alphabetic month cannot contain digits
+    if (_digitPattern.hasMatch(text)) {
+      return null;
+    }
+
+    final word = normalizeWord(text);
+    return word.isEmpty ? null : monthOfWord(word);
   }
 
   /// Returns the month of which the [word] is an abbreviation or a different form.
@@ -71,9 +111,9 @@ class _MonthIndex {
   /// same word if they share a prefix of at least [_minStemLength] characters, and neither has
   /// more than [_maxEndingLength] characters after it.
   ///
-  int? findSimilar(String word) {
+  int? _findSimilar(String word) {
     var best = _noMonth;
-    var node = trie;
+    var node = _trie;
 
     for (var depth = 0;; depth++) {
       if (depth >= _minStemLength && word.length - depth <= _maxEndingLength) {
@@ -94,47 +134,4 @@ class _MonthIndex {
 
     return best == _noMonth ? null : best;
   }
-}
-
-_MonthIndex? _index;
-var _indexedNameCount = -1;
-
-/// Returns the index of [DatifyConfig.months], rebuilding it when the number of names changes.
-///
-/// Hashing the names instead would catch every change, but costs more than the lookup itself.
-///
-_MonthIndex get _monthIndex {
-  final months = DatifyConfig.months;
-  final nameCount = months.fold<int>(0, (count, names) => count + names.length);
-
-  if (_index == null || nameCount != _indexedNameCount) {
-    _index = _MonthIndex(months);
-    _indexedNameCount = nameCount;
-  }
-
-  return _index!;
-}
-
-/// Parses a string to get a month ordinal number in range [1,12] inclusive.
-///
-/// Firstly checks if the [DatifyConfig.months] field contains the input string itself.
-///
-/// If the months list does not contain the input string, then tries to find a month name of which
-/// the input is an abbreviation (`sept`) or a different form (`januari`).
-///
-/// If no corresponding month name is found, then returns null.
-///
-int? tryParseMonth(String input) {
-  // an alphabetic month cannot contain digits
-  if (_digitPattern.hasMatch(input)) {
-    return null;
-  }
-
-  final word = normalize(input).replaceAll(_nonLetterPattern, '');
-  if (word.isEmpty) {
-    return null;
-  }
-
-  final index = _monthIndex;
-  return index.exact[word] ?? index.findSimilar(word);
 }
