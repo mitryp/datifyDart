@@ -410,6 +410,17 @@ void main() {
       );
     });
 
+    test('names added directly to the months list are recognized', () {
+      expect(Datify.parse('5 quintilis 2020').month, null);
+
+      DatifyConfig.months[6].add('quintilis');
+      expect(Datify.parse('5 quintilis 2020').month, 7);
+      expect(Datify.parse('5 quint 2020').month, 7);
+
+      DatifyConfig.months[6].remove('quintilis');
+      expect(Datify.parse('5 quintilis 2020').month, null);
+    });
+
     test('added months are defined correctly', () {
       const dates = {
         '20 septembre 2022': [20, 09, 2022],

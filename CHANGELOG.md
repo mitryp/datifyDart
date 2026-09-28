@@ -13,16 +13,17 @@
   greater than 12.
 - Added support for two-digit years after the day and month, e.g. `15.03.22`: 00–68 are read as
   2000–2068, and 69–99 as 1969–1999.
-- Improved parsing performance by caching regular expressions and simplifying month name matching.
+- Improved parsing performance by caching regular expressions and indexing month names in a lookup
+  table and a prefix tree.
   Median time per `Datify.parse` call (AOT-compiled, Dart 3.13, Apple M2 Pro):
 
   | Input                                    | 1.1.6    | 1.2.0   | Speedup |
   |------------------------------------------|----------|---------|---------|
   | Digits (`31.12.2021`)                    | 3.1 µs   | 1.8 µs  | 1.7×    |
   | General format (`2022-02-23`)            | 2.3 µs   | 1.1 µs  | 2.1×    |
-  | English month names (`11 July 2020`)     | 17.6 µs  | 3.8 µs  | 4.6×    |
-  | Ukrainian/Russian names (`6 липня 2021`) | 14.8 µs  | 4.9 µs  | 3.0×    |
-  | Not a date (`hello world`)               | 100.1 µs | 13.2 µs | 7.6×    |
+  | English month names (`11 July 2020`)     | 17.6 µs  | 3.1 µs  | 5.7×    |
+  | Ukrainian/Russian names (`6 липня 2021`) | 14.8 µs  | 4.8 µs  | 3.1×    |
+  | Not a date (`hello world`)               | 100.1 µs | 5.1 µs  | 19.6×   |
   | Digits, `dayFirst: false` (`12.31.2021`) | 3.5 µs   | 2.1 µs  | 1.7×    |
 - Raised the minimum Dart SDK version to 3.0.0.
 

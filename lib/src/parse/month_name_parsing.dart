@@ -15,25 +15,104 @@ const _minStemLength = 4;
 /// The maximum number of trailing characters that may differ between two forms of the same word.
 const _maxEndingLength = 2;
 
-/// Returns true if [input] looks like an abbreviation or an inflected form of the month [name].
+/// Greater than any month ordinal; marks the absence of a match.
+const _noMonth = 13;
+
+/// A prefix tree node of the month names.
 ///
-/// Short words that merely start with a month name, such as `maybe`, `junk`, or `decent`, are
-/// not considered matches.
+/// Each node stores the lowest month ordinal among the names below it, so that when several
+/// month names match a word, the earliest month wins.
 ///
-bool _isSameWord(String input, String name) {
-  if (input.length >= _minAbbreviationLength && name.startsWith(input)) {
-    return true;
+class _MonthTrieNode {
+  final children = <int, _MonthTrieNode>{};
+
+  /// The lowest month of all names in this subtree.
+  var month = _noMonth;
+
+  /// The lowest month of the names in this subtree that are at most `i` characters longer than
+  /// the prefix leading to this node, at index `i`.
+  final monthByEndingLength = List.filled(_maxEndingLength + 1, _noMonth);
+
+  void add(int month, int endingLength) {
+    this.month = min(this.month, month);
+    for (var i = endingLength; i <= _maxEndingLength; i++) {
+      monthByEndingLength[i] = min(monthByEndingLength[i], month);
+    }
+  }
+}
+
+/// The month names indexed for lookup.
+///
+class _MonthIndex {
+  final exact = <String, int>{};
+  final trie = _MonthTrieNode();
+
+  _MonthIndex(List<Set<String>> months) {
+    for (var ordinal = 1; ordinal <= months.length; ordinal++) {
+      for (final name in months[ordinal - 1]) {
+        exact.putIfAbsent(name, () => ordinal);
+        _addToTrie(name, ordinal);
+      }
+    }
   }
 
-  final maxStem = min(input.length, name.length);
-  var stem = 0;
-  while (stem < maxStem && input.codeUnitAt(stem) == name.codeUnitAt(stem)) {
-    stem++;
+  void _addToTrie(String name, int month) {
+    var node = trie..add(month, name.length);
+    for (var depth = 0; depth < name.length; depth++) {
+      node = node.children
+          .putIfAbsent(name.codeUnitAt(depth), _MonthTrieNode.new)
+        ..add(month, name.length - depth - 1);
+    }
   }
 
-  return stem >= _minStemLength &&
-      input.length - stem <= _maxEndingLength &&
-      name.length - stem <= _maxEndingLength;
+  /// Returns the month of which the [word] is an abbreviation or a different form.
+  ///
+  /// A word is an abbreviation of a name if the name starts with it. Two words are forms of the
+  /// same word if they share a prefix of at least [_minStemLength] characters, and neither has
+  /// more than [_maxEndingLength] characters after it.
+  ///
+  int? findSimilar(String word) {
+    var best = _noMonth;
+    var node = trie;
+
+    for (var depth = 0;; depth++) {
+      if (depth >= _minStemLength && word.length - depth <= _maxEndingLength) {
+        best = min(best, node.monthByEndingLength[_maxEndingLength]);
+      }
+
+      if (depth == word.length) {
+        if (depth >= _minAbbreviationLength) {
+          best = min(best, node.month);
+        }
+        break;
+      }
+
+      final next = node.children[word.codeUnitAt(depth)];
+      if (next == null) break;
+      node = next;
+    }
+
+    return best == _noMonth ? null : best;
+  }
+}
+
+_MonthIndex? _index;
+var _indexedNameCount = -1;
+
+/// Returns the index of [DatifyConfig.months], rebuilding it when the number of names changes.
+///
+/// Hashing the names instead would catch every change, but costs more than the lookup itself.
+///
+_MonthIndex get _monthIndex {
+  final months = DatifyConfig.months;
+  final nameCount = months.fold<int>(0, (count, names) => count + names.length);
+
+  if (_index == null || nameCount != _indexedNameCount) {
+    _index = _MonthIndex(months);
+    _indexedNameCount = nameCount;
+  }
+
+  return _index!;
 }
 
 /// Parses a string to get a month ordinal number in range [1,12] inclusive.
@@ -56,21 +135,6 @@ int? tryParseMonth(String input) {
     return null;
   }
 
-  final months = DatifyConfig.months;
-
-  for (var month = 0; month < months.length; month++) {
-    if (months[month].contains(word)) {
-      return month + 1;
-    }
-  }
-
-  for (var month = 0; month < months.length; month++) {
-    for (final name in months[month]) {
-      if (_isSameWord(word, name)) {
-        return month + 1;
-      }
-    }
-  }
-
-  return null;
+  final index = _monthIndex;
+  return index.exact[word] ?? index.findSimilar(word);
 }

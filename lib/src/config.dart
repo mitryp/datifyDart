@@ -108,6 +108,10 @@ abstract class DatifyConfig {
   /// *It's possible to add more localizations to Datify. See the [addNewMonthName]
   /// and [addNewMonthsLocale] methods.*
   ///
+  /// The names are indexed for fast lookup, and the index is rebuilt when the total number of names
+  /// changes. A direct change that keeps the number of names the same, such as replacing one name
+  /// with another, is not picked up.
+  ///
   static final months = [
     {
       'january',
