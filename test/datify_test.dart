@@ -136,6 +136,40 @@ void main() {
 
     // test the russian month forms
     testMonthsList(russian, 'russian months forms are defined correctly');
+
+    test('ukrainian and russian abbreviations are defined correctly', () {
+      const ukrainianAbbreviations = [
+        'січ',
+        'лют',
+        'бер',
+        'кві',
+        'тра',
+        'чер',
+        'лип',
+        'сер',
+        'вер',
+        'жов',
+        'лис',
+        'гру',
+      ];
+
+      for (var month = 0; month < ukrainianAbbreviations.length; month++) {
+        final abbreviation = ukrainianAbbreviations[month];
+        expect(
+          Datify.parse('3 $abbreviation 2026').date,
+          DateTime(2026, month + 1, 3),
+          reason: abbreviation,
+        );
+      }
+
+      expect(Datify.parse('3 січ. 2026').date, DateTime(2026, 1, 3));
+      expect(Datify.parse('3 янв 2026').date, DateTime(2026, 1, 3));
+      expect(Datify.parse('8 мар 2026').date, DateTime(2026, 3, 8));
+    });
+
+    test('two-letter abbreviations are not months', () {
+      expect(Datify.parse('3 сі 2026').month, null);
+    });
   });
 
   // Test the Datify parsing incomplete dates correctly
